@@ -23,6 +23,22 @@ const DASHBOARD_TEMPLATES = [
   { key: "macro", label: "Macro Desk" },
   { key: "crypto", label: "Crypto Desk" },
 ] as const;
+const SYMBOL_HELP: Record<string, { name: string; hint: string }> = {
+  "CL=F": { name: "Crude Oil (WTI)", hint: "US oil benchmark futures" },
+  "NG=F": { name: "Natural Gas", hint: "US natural gas futures" },
+  "GC=F": { name: "Gold", hint: "Gold futures (ounce)" },
+  "SI=F": { name: "Silver", hint: "Silver futures (ounce)" },
+  "HG=F": { name: "Copper", hint: "Copper futures (industrial metal)" },
+  "ZC=F": { name: "Corn", hint: "Corn futures (crop market)" },
+  "ZW=F": { name: "Wheat", hint: "Wheat futures (crop market)" },
+  "ZS=F": { name: "Soybeans", hint: "Soybean futures (crop market)" },
+  BTC: { name: "Bitcoin", hint: "Crypto benchmark" },
+  ETH: { name: "Ethereum", hint: "Smart-contract crypto" },
+  GLD: { name: "SPDR Gold ETF", hint: "Gold price ETF" },
+  SLV: { name: "iShares Silver ETF", hint: "Silver price ETF" },
+  USO: { name: "US Oil Fund", hint: "Oil-linked ETF" },
+  UNG: { name: "US Natural Gas Fund", hint: "Gas-linked ETF" },
+};
 
 function cycleSize(size: DashboardWidgetSize): DashboardWidgetSize {
   const idx = SIZE_ORDER.indexOf(size);
@@ -51,6 +67,14 @@ function truncateText(text: string | undefined, maxLength = 90): string {
   return `${text.slice(0, maxLength - 1).trimEnd()}…`;
 }
 
+function symbolLabel(symbol: string): string {
+  return SYMBOL_HELP[symbol.toUpperCase()]?.name ?? symbol.toUpperCase();
+}
+
+function symbolHint(symbol: string): string | null {
+  return SYMBOL_HELP[symbol.toUpperCase()]?.hint ?? null;
+}
+
 function defaultWidgets(
   topics: DashboardTopicCard[],
   watchTopics: DashboardWatchCard[],
@@ -73,7 +97,7 @@ function defaultWidgets(
     type: "price" as const,
     refId: symbol,
     symbol,
-    label: symbol,
+    label: symbolLabel(symbol),
     size: "s" as const,
   }));
   return [...priceWidgets, ...topicWidgets, ...watchWidgets];
@@ -303,7 +327,7 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
       type: "price",
       refId: symbol,
       symbol,
-      label: symbol,
+      label: symbolLabel(symbol),
       size: "s",
     });
     setNewSymbol("");
@@ -363,7 +387,7 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
         type: "price" as const,
         refId: symbol,
         symbol,
-        label: symbol,
+        label: symbolLabel(symbol),
         size: "s" as const,
       })),
       ...topicCandidates.slice(0, 8).map((item) => ({
@@ -486,14 +510,14 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
                 </div>
                 <div className="stack">
                   <strong>Price card</strong>
-                  <label>
-                    Symbol
-                    <input
-                      value={newSymbol}
-                      onChange={(event) => setNewSymbol(event.target.value)}
-                      placeholder="GC=F, CL=F, HG=F..."
-                    />
-                  </label>
+              <label>
+                Symbol
+                <input
+                  value={newSymbol}
+                  onChange={(event) => setNewSymbol(event.target.value)}
+                  placeholder="CL=F (Oil), GC=F (Gold), HG=F (Copper)..."
+                />
+              </label>
                   <button type="button" onClick={addPriceCard}>
                     + Add price card
                   </button>
@@ -767,13 +791,15 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
             );
           }
 
-          const symbol = widget.symbol || widget.refId;
+          const symbol = (widget.symbol || widget.refId).toUpperCase();
           const quote = quotes[symbol];
           const changePct = quote?.changePct ?? null;
           const changeClass =
             changePct === null ? "" : changePct > 0 ? "price-up" : changePct < 0 ? "price-down" : "price-flat";
           const glowClass =
             changePct === null ? "" : changePct > 0 ? "glow-green" : changePct < 0 ? "glow-red" : "";
+          const displayName = widget.label || symbolLabel(symbol) || quote?.name || symbol;
+          const displayHint = symbolHint(symbol);
 
           return (
             <article
@@ -785,7 +811,7 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
               onDrop={() => reorder(widget.id)}
             >
               <header>
-                <h3>{widget.label || symbol}</h3>
+                <h3>{displayName}</h3>
                 <div className="summary-actions">
                   {editMode ? (
                     <>
@@ -806,6 +832,10 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
                   </button>
                 </div>
               </header>
+              <div className="summary-meta">
+                <span>{symbol}</span>
+                {displayHint ? <span>{displayHint}</span> : null}
+              </div>
               <p className="dash-price">{quote?.price !== null && quote?.price !== undefined ? quote.price.toFixed(2) : "--"}</p>
               <p className={`tiny-meta ${changeClass}`}>
                 {changePct !== null && changePct !== undefined ? `${changePct >= 0 ? "+" : ""}${changePct.toFixed(2)}%` : "No price"}
