@@ -187,6 +187,14 @@ select {
   gap: 0.5rem;
 }
 
+.preset-row {
+  align-items: flex-start;
+  padding: 0.45rem 0.4rem;
+  border: 1px solid #e3e9f1;
+  border-radius: 8px;
+  background: #f9fbff;
+}
+
 .feed-box {
   border: 1px dashed #b9c7da;
   border-radius: 10px;

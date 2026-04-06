@@ -34,7 +34,7 @@ function Shell({ user, onLogout }: { user: SessionUser; onLogout: () => Promise<
       <main className="content-area">
         <Routes>
           <Route path="/inbox" element={<InboxPage />} />
-          <Route path="/topics" element={<TopicsPage />} />
+          <Route path="/topics" element={<TopicsPage isAdmin={user.role === "admin"} />} />
           <Route path="/feeds" element={<FeedsPage />} />
           <Route path="/watch-topics" element={<WatchTopicsPage isAdmin={user.role === "admin"} />} />
           {user.role === "admin" ? <Route path="/admin" element={<AdminPage />} /> : null}

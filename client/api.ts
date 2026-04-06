@@ -16,6 +16,14 @@ export interface Feed {
   active: boolean;
 }
 
+export interface FeedPreset {
+  key: string;
+  name: string;
+  url: string;
+  category: "macro" | "commodities" | "equities" | "crypto" | "general";
+  description: string;
+}
+
 export interface Topic {
   id: string;
   name: string;
@@ -109,7 +117,9 @@ export const api = {
     request<{ ok: true; status: string }>(`/api/topics/${topicId}/backfill`, { method: "POST" }),
   deleteTopic: (topicId: string) => request<{ ok: true }>(`/api/topics/${topicId}`, { method: "DELETE" }),
   listFeeds: () => request<{ feeds: Feed[] }>("/api/feeds"),
-  createFeed: (payload: unknown) => request<{ feed: Feed }>("/api/feeds", { method: "POST", body: JSON.stringify(payload) }),
+  createFeed: (payload: unknown) =>
+    request<{ feed: Feed; existing?: boolean }>("/api/feeds", { method: "POST", body: JSON.stringify(payload) }),
+  listFeedPresets: () => request<{ presets: FeedPreset[] }>("/api/feeds/presets"),
   listWatchTopics: () => request<{ watchTopics: WatchTopic[] }>("/api/watch-topics"),
   createWatchTopic: (payload: unknown) =>
     request<{ watchTopic: WatchTopic }>("/api/watch-topics", { method: "POST", body: JSON.stringify(payload) }),

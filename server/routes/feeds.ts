@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { feeds } from "../../shared/schema";
+import { FREE_FINANCE_FEED_PRESETS } from "../../shared/starterPack";
 import { db } from "../db";
 import { requireAuth } from "../middleware/auth";
 import { newId } from "../utils/id";
@@ -19,7 +20,16 @@ const updateFeedSchema = z.object({
   active: z.boolean().optional(),
 });
 
+function normalizeFeedUrl(raw: string): string {
+  const parsed = new URL(raw.trim());
+  return parsed.toString().replace(/\/$/, "");
+}
+
 export function registerFeedRoutes(app: Express): void {
+  app.get("/api/feeds/presets", requireAuth, (_req, res) => {
+    res.json({ presets: FREE_FINANCE_FEED_PRESETS });
+  });
+
   app.get("/api/feeds", requireAuth, async (_req, res) => {
     const rows = await db.query.feeds.findMany({
       orderBy: [desc(feeds.createdAt)],
@@ -35,18 +45,25 @@ export function registerFeedRoutes(app: Express): void {
       return;
     }
 
+    const normalizedUrl = normalizeFeedUrl(parsed.data.url);
+    const existing = await db.query.feeds.findFirst({ where: eq(feeds.url, normalizedUrl) });
+    if (existing) {
+      res.status(200).json({ feed: existing, existing: true });
+      return;
+    }
+
     const [created] = await db
       .insert(feeds)
       .values({
         id: newId(),
         name: parsed.data.name,
-        url: parsed.data.url,
+        url: normalizedUrl,
         type: parsed.data.type,
         createdByUserId: req.session.user!.id,
       })
       .returning();
 
-    res.status(201).json({ feed: created });
+    res.status(201).json({ feed: created, existing: false });
   });
 
   app.patch("/api/feeds/:id", requireAuth, async (req, res) => {
@@ -61,6 +78,7 @@ export function registerFeedRoutes(app: Express): void {
       .update(feeds)
       .set({
         ...parsed.data,
+        url: parsed.data.url ? normalizeFeedUrl(parsed.data.url) : undefined,
         updatedAt: new Date(),
       })
       .where(eq(feeds.id, feedId))

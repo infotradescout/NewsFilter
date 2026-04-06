@@ -1,8 +1,9 @@
 import "dotenv/config";
-import { and, eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { hash } from "bcryptjs";
 import { db, pool } from "../server/db";
 import { feeds, topics, topicFeeds, userWatchTopics, users, watchTopics } from "../shared/schema";
+import { FREE_FINANCE_FEED_PRESETS, STARTER_TOPIC_PRESETS } from "../shared/starterPack";
 import { newId } from "../server/utils/id";
 import { runTopicSync } from "../server/services/news/syncTopic";
 
@@ -16,7 +17,6 @@ type SeedTopic = {
   includeTerms: string[];
   excludeTerms: string[];
   exactPhrases: string[];
-  feedNames: string[];
 };
 
 type SeedWatch = {
@@ -25,61 +25,21 @@ type SeedWatch = {
   queryText: string;
 };
 
-const starterFeeds: SeedFeed[] = [
-  { name: "Reuters Business", url: "https://www.reuters.com/business/rss" },
-  { name: "CNBC Top News", url: "https://www.cnbc.com/id/100003114/device/rss/rss.html" },
-  { name: "MarketWatch Top Stories", url: "https://feeds.marketwatch.com/marketwatch/topstories/" },
-  { name: "Yahoo Finance News", url: "https://finance.yahoo.com/news/rssindex" },
-  { name: "CoinDesk", url: "https://www.coindesk.com/arc/outboundfeeds/rss/" },
-  { name: "Investing.com Commodities", url: "https://www.investing.com/rss/news_11.rss" },
-];
+const starterFeeds: SeedFeed[] = FREE_FINANCE_FEED_PRESETS.map((feed) => ({
+  name: feed.name,
+  url: feed.url,
+}));
 
-const starterTopics: SeedTopic[] = [
-  {
-    name: "Macro Rates & Inflation",
-    category: "macro",
-    scope: "shared",
-    window: "24h",
-    queryText: "fed rates cpi pce payrolls inflation recession",
-    includeTerms: ["fed", "rate", "cpi", "inflation", "pce", "payroll"],
-    excludeTerms: ["sports", "celebrity"],
-    exactPhrases: ["core inflation", "interest rate"],
-    feedNames: ["Reuters Business", "CNBC Top News", "MarketWatch Top Stories"],
-  },
-  {
-    name: "Commodities Energy & Metals",
-    category: "commodities",
-    scope: "shared",
-    window: "24h",
-    queryText: "oil brent wti opec natural gas gold silver copper",
-    includeTerms: ["oil", "brent", "wti", "natural gas", "gold", "copper"],
-    excludeTerms: ["sports", "fashion"],
-    exactPhrases: ["supply disruption"],
-    feedNames: ["Reuters Business", "Investing.com Commodities", "MarketWatch Top Stories"],
-  },
-  {
-    name: "Crypto Market Structure",
-    category: "crypto",
-    scope: "shared",
-    window: "24h",
-    queryText: "bitcoin ethereum etf flow regulation exchange liquidity",
-    includeTerms: ["bitcoin", "ethereum", "etf", "exchange", "liquidity"],
-    excludeTerms: ["gaming", "nft art"],
-    exactPhrases: ["stablecoin depeg", "exchange outage"],
-    feedNames: ["CoinDesk", "CNBC Top News"],
-  },
-  {
-    name: "Equities Earnings & Risk",
-    category: "equities",
-    scope: "shared",
-    window: "24h",
-    queryText: "earnings guidance downgrade upgrade risk sentiment",
-    includeTerms: ["earnings", "guidance", "downgrade", "upgrade", "risk"],
-    excludeTerms: ["box office", "music"],
-    exactPhrases: ["risk sentiment", "earnings miss"],
-    feedNames: ["Reuters Business", "Yahoo Finance News", "CNBC Top News"],
-  },
-];
+const starterTopics: SeedTopic[] = STARTER_TOPIC_PRESETS.map((topic) => ({
+  name: topic.name,
+  category: topic.category,
+  scope: "shared",
+  window: topic.window,
+  queryText: topic.queryText,
+  includeTerms: topic.includeTerms,
+  excludeTerms: topic.excludeTerms,
+  exactPhrases: topic.exactPhrases,
+}));
 
 const starterWatchTopics: SeedWatch[] = [
   { name: "Always On: Fed & CPI", category: "macro", queryText: "fed fomc cpi pce payroll inflation" },
@@ -117,6 +77,7 @@ async function upsertFeeds(adminId: string) {
 
 async function upsertTopics(adminId: string, feedMap: Map<string, string>) {
   const topicIds: string[] = [];
+  const allFeedIds = [...feedMap.values()];
 
   for (const topic of starterTopics) {
     let topicRow = await db.query.topics.findFirst({ where: eq(topics.name, topic.name) });
@@ -146,11 +107,7 @@ async function upsertTopics(adminId: string, feedMap: Map<string, string>) {
 
     topicIds.push(topicRow.id);
 
-    const feedIds = topic.feedNames
-      .map((name) => feedMap.get(name))
-      .filter((id): id is string => Boolean(id));
-
-    for (const feedId of feedIds) {
+    for (const feedId of allFeedIds) {
       await db
         .insert(topicFeeds)
         .values({ topicId: topicRow.id, feedId })

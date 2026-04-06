@@ -13,6 +13,8 @@ Finance-first NewsFilter for macro, commodities, equities, and crypto intelligen
 - Invite-only team onboarding
 - Email/password login with roles (`admin`, `member`)
 - Personal + shared topics with windows (`24h`, `7d`, `30d`)
+- One-click setup for recommended free finance sources
+- One-click starter topic pack (macro, commodities, equities, crypto)
 - Google News RSS + custom RSS ingestion
 - Precision-first vetting (`market impact + keyword match + freshness + source trust`)
 - Top 15 vetted candidates/topic/run, summarize top 5
