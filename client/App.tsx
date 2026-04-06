@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { NavLink, Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { NavLink, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { api, SessionUser } from "./api";
 import AcceptInvitePage from "./pages/AcceptInvitePage";
 import AdminPage from "./pages/AdminPage";
@@ -13,6 +13,7 @@ import WatchTopicsPage from "./pages/WatchTopicsPage";
 
 function Shell({ user, onLogout }: { user: SessionUser; onLogout: () => Promise<void> }) {
   const navigate = useNavigate();
+  const location = useLocation();
 
   async function handleLogout() {
     await onLogout();
@@ -25,13 +26,27 @@ function Shell({ user, onLogout }: { user: SessionUser; onLogout: () => Promise<
     if (tab === "watch") navigate("/watch-topics");
   }
 
+  const sectionTitleByPath: Record<string, string> = {
+    "/dashboard": "Dashboard",
+    "/start": "Quick Setup",
+    "/inbox": "Updates",
+    "/topics": "Topics",
+    "/feeds": "Sources",
+    "/watch-topics": "Always On",
+    "/admin": "Team",
+  };
+  const sectionTitle = sectionTitleByPath[location.pathname] ?? "NewsFilter";
+
   return (
     <div className="app-shell">
       <aside className="side-nav">
         <div className="side-nav-top">
-          <div>
-            <h1>NewsFilter</h1>
-            <p>{user.email}</p>
+          <div className="brand">
+            <span className="brand-mark" />
+            <div>
+              <h1>NewsFilter</h1>
+              <p>Market Tracking</p>
+            </div>
           </div>
           <button onClick={handleLogout} className="secondary">
             Logout
@@ -48,6 +63,10 @@ function Shell({ user, onLogout }: { user: SessionUser; onLogout: () => Promise<
         </nav>
       </aside>
       <main className="content-area">
+        <header className="topbar">
+          <h2>{sectionTitle}</h2>
+          <div className="user-chip">{user.email}</div>
+        </header>
         <Routes>
           <Route path="/dashboard" element={<DashboardPage onOpenTab={openTab} />} />
           <Route path="/start" element={<StartPage user={user} />} />
