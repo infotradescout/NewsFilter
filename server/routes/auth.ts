@@ -13,6 +13,11 @@ const loginSchema = z.object({
   password: z.string().min(8),
 });
 
+const registerSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+});
+
 const acceptInviteSchema = z.object({
   token: z.string().min(20),
   password: z.string().min(8),
@@ -74,6 +79,46 @@ export function registerAuthRoutes(app: Express): void {
         id: user.id,
         email: user.email,
         role: user.role,
+      },
+    });
+  });
+
+  app.post("/api/auth/register", async (req, res) => {
+    const parsed = registerSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Invalid registration payload" });
+      return;
+    }
+
+    const email = parsed.data.email.toLowerCase();
+    const existing = await db.query.users.findFirst({ where: eq(users.email, email) });
+    if (existing) {
+      res.status(409).json({ error: "Account already exists for this email" });
+      return;
+    }
+
+    const passwordHash = await hash(parsed.data.password, 12);
+    const [createdUser] = await db
+      .insert(users)
+      .values({
+        id: newId(),
+        email,
+        passwordHash,
+        role: "member",
+      })
+      .returning();
+
+    req.session.user = {
+      id: createdUser.id,
+      email: createdUser.email,
+      role: createdUser.role,
+    };
+
+    res.status(201).json({
+      user: {
+        id: createdUser.id,
+        email: createdUser.email,
+        role: createdUser.role,
       },
     });
   });

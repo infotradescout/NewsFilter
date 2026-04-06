@@ -35,7 +35,7 @@ export default function InboxPage() {
       <header className="page-header-row">
         <div>
           <h2>Updates</h2>
-          <p>Your latest summaries, ranked by likely market importance.</p>
+          <p>Quick takes for fast decisions.</p>
         </div>
         <button onClick={() => void load()} disabled={loading}>
           Refresh
@@ -55,13 +55,11 @@ export default function InboxPage() {
             </div>
             <h3>{item.headline}</h3>
             <ul>
-              {item.bullets.map((bullet) => (
+              {item.bullets.slice(0, 1).map((bullet) => (
                 <li key={bullet}>{bullet}</li>
               ))}
             </ul>
-            <p>
-              <strong>{item.topicName}</strong> · {item.sourceDomain}
-            </p>
+            <p className="tiny-meta">{item.sourceDomain}</p>
             <div className="summary-actions">
               <a href={item.sourceLink} target="_blank" rel="noreferrer">
                 Open source

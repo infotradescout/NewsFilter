@@ -8,10 +8,10 @@ export function trimWords(input: string, maxWords: number): string {
 }
 
 export function enforceSummaryShape(headline: string, bullets: string[]): { headline: string; bullets: string[] } {
-  const cleanHeadline = trimWords(headline || "Market update", 12);
+  const cleanHeadline = trimWords(headline || "Market update", 9);
   const cleanBullets = bullets
-    .slice(0, 2)
-    .map((bullet) => trimWords(bullet.replace(/^[-*\s]+/, ""), 18))
+    .slice(0, 1)
+    .map((bullet) => trimWords(bullet.replace(/^[-*\s]+/, ""), 12))
     .filter(Boolean);
 
   return {
@@ -22,8 +22,8 @@ export function enforceSummaryShape(headline: string, bullets: string[]): { head
 
 function fallbackSummary(title: string, snippet: string): SummaryOutput {
   const blended = `${title}. ${snippet}`.trim();
-  const sentence = trimWords(blended, 18);
-  const shaped = enforceSummaryShape(trimWords(title, 12), [sentence]);
+  const sentence = trimWords(blended, 12);
+  const shaped = enforceSummaryShape(trimWords(title, 9), [sentence]);
   return {
     headline: shaped.headline,
     bullets: shaped.bullets,
@@ -54,7 +54,7 @@ export async function summarizeArticle(args: {
     `Source: ${args.sourceDomain}`,
     `Published: ${args.publishedAt.toISOString()}`,
     "Return strict JSON: {\"headline\": string, \"bullets\": string[] }",
-    "Constraints: headline <= 12 words; max 2 bullets; each bullet <= 18 words; minimal wording.",
+    "Constraints: headline <= 9 words; max 1 bullet; bullet <= 12 words; minimal wording.",
   ].join("\n");
 
   try {

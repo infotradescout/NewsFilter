@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 
@@ -8,22 +8,34 @@ interface LoginPageProps {
 
 export default function LoginPage({ onLoggedIn }: LoginPageProps) {
   const navigate = useNavigate();
+  const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+
+    if (mode === "register" && password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await api.login(email, password);
+      if (mode === "login") {
+        await api.login(email, password);
+      } else {
+        await api.register(email, password);
+      }
       await onLoggedIn();
-      navigate("/inbox");
+      navigate("/start");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      setError(err instanceof Error ? err.message : "Authentication failed");
     } finally {
       setLoading(false);
     }
@@ -33,9 +45,31 @@ export default function LoginPage({ onLoggedIn }: LoginPageProps) {
     <main className="centered-page">
       <div className="auth-card">
         <h1>NewsFilter</h1>
-        <p>Simple market news tracking for teams.</p>
+        <p>Fast market signals with minimal reading.</p>
 
         <form onSubmit={handleSubmit} className="stack">
+          <div className="mode-toggle">
+            <button
+              type="button"
+              className={mode === "login" ? "" : "secondary"}
+              onClick={() => {
+                setMode("login");
+                setError(null);
+              }}
+            >
+              Sign in
+            </button>
+            <button
+              type="button"
+              className={mode === "register" ? "" : "secondary"}
+              onClick={() => {
+                setMode("register");
+                setError(null);
+              }}
+            >
+              Create account
+            </button>
+          </div>
           <label>
             Email
             <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
@@ -50,9 +84,21 @@ export default function LoginPage({ onLoggedIn }: LoginPageProps) {
               minLength={8}
             />
           </label>
+          {mode === "register" ? (
+            <label>
+              Confirm password
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                required
+                minLength={8}
+              />
+            </label>
+          ) : null}
           {error ? <p className="error">{error}</p> : null}
           <button type="submit" disabled={loading}>
-            {loading ? "Signing in..." : "Sign in"}
+            {loading ? "Working..." : mode === "login" ? "Sign in" : "Create account"}
           </button>
         </form>
       </div>

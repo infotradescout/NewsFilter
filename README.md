@@ -10,7 +10,7 @@ Finance-first NewsFilter for macro, commodities, equities, and crypto intelligen
 - OpenAI summarization with top-k gating and cache reuse
 
 ## Core behavior
-- Invite-only team onboarding
+- Public account creation (email/password) + invite links for team onboarding
 - Email/password login with roles (`admin`, `member`)
 - Personal + shared topics with windows (`24h`, `7d`, `30d`)
 - One-click setup for recommended free finance sources
@@ -64,7 +64,7 @@ Use this one-click Blueprint link:
 4. Log in with your seeded admin account, then create invites from **Admin**.
 
 ## API surfaces
-- Auth: `POST /api/auth/login`, `POST /api/auth/logout`, `POST /api/invites/accept`
+- Auth: `POST /api/auth/login`, `POST /api/auth/register`, `POST /api/auth/logout`, `POST /api/invites/accept`
 - Admin: `GET /api/admin/users`, `GET /api/admin/invites`, `POST /api/admin/invites`
 - Topics: `GET/POST/PATCH/DELETE /api/topics`, `POST /api/topics/:id/backfill`
 - Watch topics: `GET/POST/PATCH/DELETE /api/watch-topics`

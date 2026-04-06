@@ -105,6 +105,11 @@ export const api = {
     method: "POST",
     body: JSON.stringify({ email, password }),
   }),
+  register: (email: string, password: string) =>
+    request<{ user: SessionUser }>("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    }),
   logout: () => request<{ ok: true }>("/api/auth/logout", { method: "POST" }),
   acceptInvite: (token: string, password: string) =>
     request<{ user: SessionUser }>("/api/invites/accept", {
