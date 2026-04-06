@@ -111,6 +111,7 @@ export interface DashboardTopicCard {
     publishedAt: string;
     sourceLink: string;
     sourceDomain: string;
+    tone: "positive" | "negative" | "neutral";
   } | null;
 }
 
@@ -125,6 +126,7 @@ export interface DashboardWatchCard {
     publishedAt: string;
     sourceLink: string;
     sourceDomain: string;
+    tone: "positive" | "negative" | "neutral";
   } | null;
 }
 

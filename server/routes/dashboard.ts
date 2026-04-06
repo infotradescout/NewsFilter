@@ -24,6 +24,41 @@ const saveLayoutSchema = z.object({
 });
 
 const DEFAULT_PRICE_SYMBOLS = ["CL=F", "NG=F", "GC=F", "HG=F"];
+type Tone = "positive" | "negative" | "neutral";
+
+const POSITIVE_TERMS = [
+  "beat",
+  "surge",
+  "rally",
+  "gain",
+  "strong",
+  "upside",
+  "upgrade",
+  "easing",
+  "cooling inflation",
+  "record high",
+  "bullish",
+  "inflow",
+  "rebound",
+];
+
+const NEGATIVE_TERMS = [
+  "miss",
+  "drop",
+  "selloff",
+  "plunge",
+  "cut",
+  "downgrade",
+  "recession",
+  "hot inflation",
+  "shock",
+  "outage",
+  "default",
+  "bearish",
+  "outflow",
+  "liquidation",
+  "disruption",
+];
 
 function parseDomain(url: string): string {
   try {
@@ -31,6 +66,23 @@ function parseDomain(url: string): string {
   } catch {
     return "source";
   }
+}
+
+function classifyTone(text: string): Tone {
+  const haystack = text.toLowerCase();
+  let positive = 0;
+  let negative = 0;
+
+  for (const term of POSITIVE_TERMS) {
+    if (haystack.includes(term)) positive += 1;
+  }
+  for (const term of NEGATIVE_TERMS) {
+    if (haystack.includes(term)) negative += 1;
+  }
+
+  if (positive - negative >= 1) return "positive";
+  if (negative - positive >= 1) return "negative";
+  return "neutral";
 }
 
 async function latestSummaryForTopic(topicId: string) {
@@ -84,6 +136,7 @@ export function registerDashboardRoutes(app: Express): void {
                 publishedAt: latest.publishedAt,
                 sourceLink: latest.sourceLink,
                 sourceDomain: parseDomain(latest.sourceLink),
+                tone: classifyTone(`${latest.headline} ${latest.bullets[0] ?? ""}`),
               }
             : null,
         };
@@ -107,6 +160,7 @@ export function registerDashboardRoutes(app: Express): void {
                   publishedAt: latest.publishedAt,
                   sourceLink: latest.sourceLink,
                   sourceDomain: parseDomain(latest.sourceLink),
+                  tone: classifyTone(`${latest.headline} ${latest.bullets[0] ?? ""}`),
                 }
               : null,
           };

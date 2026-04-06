@@ -25,6 +25,12 @@ function widgetKey(type: "topic" | "watch" | "price", refId: string): string {
   return `${type}:${refId}`;
 }
 
+function toneClass(tone?: "positive" | "negative" | "neutral"): string {
+  if (tone === "positive") return "glow-green";
+  if (tone === "negative") return "glow-red";
+  return "";
+}
+
 function defaultWidgets(
   topics: DashboardTopicCard[],
   watchTopics: DashboardWatchCard[],
@@ -332,10 +338,11 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
           if (widget.type === "topic") {
             const item = topicMap.get(widget.refId);
             if (!item) return null;
+            const cardToneClass = toneClass(item.last?.tone);
             return (
               <article
                 key={widget.id}
-                className={`dashboard-card size-${widget.size}`}
+                className={`dashboard-card size-${widget.size} ${cardToneClass}`}
                 draggable={editMode}
                 onDragStart={() => setDraggingId(widget.id)}
                 onDragOver={(event) => event.preventDefault()}
@@ -376,10 +383,11 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
           if (widget.type === "watch") {
             const item = watchMap.get(widget.refId);
             if (!item) return null;
+            const cardToneClass = toneClass(item.last?.tone);
             return (
               <article
                 key={widget.id}
-                className={`dashboard-card size-${widget.size}`}
+                className={`dashboard-card size-${widget.size} ${cardToneClass}`}
                 draggable={editMode}
                 onDragStart={() => setDraggingId(widget.id)}
                 onDragOver={(event) => event.preventDefault()}
@@ -422,11 +430,13 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
           const changePct = quote?.changePct ?? null;
           const changeClass =
             changePct === null ? "" : changePct > 0 ? "price-up" : changePct < 0 ? "price-down" : "price-flat";
+          const glowClass =
+            changePct === null ? "" : changePct > 0 ? "glow-green" : changePct < 0 ? "glow-red" : "";
 
           return (
             <article
               key={widget.id}
-              className={`dashboard-card size-${widget.size}`}
+              className={`dashboard-card size-${widget.size} ${glowClass}`}
               draggable={editMode}
               onDragStart={() => setDraggingId(widget.id)}
               onDragOver={(event) => event.preventDefault()}

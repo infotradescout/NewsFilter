@@ -333,6 +333,7 @@ select {
   display: grid;
   gap: 0.38rem;
   box-shadow: 0 5px 14px rgba(16, 32, 55, 0.07);
+  transition: box-shadow 120ms ease, border-color 120ms ease;
 }
 
 .dashboard-card.size-s {
@@ -383,6 +384,22 @@ select {
 
 .price-flat {
   color: #536b8a;
+}
+
+.dashboard-card.glow-green {
+  border-color: #95dfb9;
+  box-shadow:
+    0 0 0 1px rgba(44, 159, 92, 0.25),
+    0 0 18px rgba(44, 159, 92, 0.24),
+    0 8px 22px rgba(17, 80, 44, 0.16);
+}
+
+.dashboard-card.glow-red {
+  border-color: #ef9aa3;
+  box-shadow:
+    0 0 0 1px rgba(208, 61, 76, 0.24),
+    0 0 18px rgba(208, 61, 76, 0.22),
+    0 8px 22px rgba(103, 20, 30, 0.15);
 }
 
 @media (max-width: 900px) {
