@@ -376,6 +376,7 @@ export async function runTopicSync(topicId: string, trigger: "scheduler" | "back
         topicName: topic.topicName,
         articleTitle: candidate.title,
         articleSnippet: candidate.summarySnippet,
+        articleUrl: candidate.canonicalUrl,
         sourceDomain: candidate.sourceDomain,
         publishedAt: candidate.publishedAt,
       });

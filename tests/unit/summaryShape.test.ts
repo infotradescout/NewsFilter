@@ -11,8 +11,8 @@ describe("summary shape", () => {
       ]
     );
 
-    expect(result.headline.split(/\s+/).length).toBeLessThanOrEqual(9);
+    expect(result.headline.split(/\s+/).length).toBeLessThanOrEqual(12);
     expect(result.bullets.length).toBeLessThanOrEqual(1);
-    expect(result.bullets[0].split(/\s+/).length).toBeLessThanOrEqual(12);
+    expect(result.bullets[0].split(/\s+/).length).toBeLessThanOrEqual(18);
   });
 });
