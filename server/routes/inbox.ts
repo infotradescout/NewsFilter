@@ -113,6 +113,22 @@ export function registerInboxRoutes(app: Express): void {
       items = items.filter((item) => !item.read);
     }
 
+    items = [...items].sort(
+      (left, right) =>
+        new Date(right.publishedAt).getTime() - new Date(left.publishedAt).getTime()
+    );
+
+    // One live card per topic: newest update replaces older cards.
+    const latestByTopic: typeof items = [];
+    const seenTopicIds = new Set<string>();
+    for (const item of items) {
+      if (seenTopicIds.has(item.topicId)) continue;
+      seenTopicIds.add(item.topicId);
+      latestByTopic.push(item);
+    }
+
+    items = latestByTopic;
+
     res.json({ items });
   });
 
