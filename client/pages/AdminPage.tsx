@@ -44,7 +44,7 @@ export default function AdminPage() {
       <header className="page-header-row">
         <div>
           <h2>Admin</h2>
-          <p>Invite teammates and monitor account setup.</p>
+          <p>Invite people and manage account access.</p>
         </div>
       </header>
 
@@ -68,6 +68,7 @@ export default function AdminPage() {
 
       <div className="panel">
         <h3>Users</h3>
+        <div className="table-wrap">
         <table className="table">
           <thead>
             <tr>
@@ -84,10 +85,12 @@ export default function AdminPage() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       <div className="panel">
         <h3>Invites</h3>
+        <div className="table-wrap">
         <table className="table">
           <thead>
             <tr>
@@ -108,6 +111,7 @@ export default function AdminPage() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </section>
   );

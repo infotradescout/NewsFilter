@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import type { WatchTopic } from "../api";
 import { api } from "../api";
+import { categoryHelp, categoryLabel } from "../labels";
 
 interface WatchTopicsPageProps {
   isAdmin: boolean;
@@ -61,8 +62,8 @@ export default function WatchTopicsPage({ isAdmin }: WatchTopicsPageProps) {
     <section className="page-stack">
       <header className="page-header-row">
         <div>
-          <h2>Persistent Watch Topics</h2>
-          <p>Always-on high-priority tracking themes.</p>
+          <h2>Always-On Topics</h2>
+          <p>Always-on topics that run in the background every hour.</p>
         </div>
         <button onClick={() => void load()} disabled={loading}>
           Refresh
@@ -77,14 +78,15 @@ export default function WatchTopicsPage({ isAdmin }: WatchTopicsPageProps) {
             <input value={name} onChange={(event) => setName(event.target.value)} required />
           </label>
           <label>
-            Category
+            Topic type
             <select value={category} onChange={(event) => setCategory(event.target.value as any)}>
-              <option value="macro">Macro</option>
-              <option value="commodities">Commodities</option>
-              <option value="equities">Equities</option>
-              <option value="crypto">Crypto</option>
+              <option value="macro">{categoryLabel("macro")}</option>
+              <option value="commodities">{categoryLabel("commodities")}</option>
+              <option value="equities">{categoryLabel("equities")}</option>
+              <option value="crypto">{categoryLabel("crypto")}</option>
             </select>
           </label>
+          <p>{categoryHelp(category)}</p>
           <label>
             Query text
             <input value={queryText} onChange={(event) => setQueryText(event.target.value)} required />
@@ -100,7 +102,7 @@ export default function WatchTopicsPage({ isAdmin }: WatchTopicsPageProps) {
           <article className="panel stack" key={item.id}>
             <h3>{item.name}</h3>
             <p>
-              {item.category} · {item.isActive ? "active" : "paused"}
+              {categoryLabel(item.category)} · {item.isActive ? "active" : "paused"}
             </p>
             <p>{item.queryText}</p>
             <div className="summary-actions">

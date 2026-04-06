@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { InboxItem } from "../api";
 import { api } from "../api";
+import { categoryLabel } from "../labels";
 
 export default function InboxPage() {
   const [items, setItems] = useState<InboxItem[]>([]);
@@ -34,7 +35,7 @@ export default function InboxPage() {
       <header className="page-header-row">
         <div>
           <h2>Inbox</h2>
-          <p>Ultra-brief, market-impact-first summaries.</p>
+          <p>Short updates from your selected topics.</p>
         </div>
         <button onClick={() => void load()} disabled={loading}>
           Refresh
@@ -48,7 +49,7 @@ export default function InboxPage() {
         {items.map((item) => (
           <article className={`summary-card ${item.read ? "is-read" : ""}`} key={item.id}>
             <div className="summary-meta">
-              <span>{item.category}</span>
+              <span>{categoryLabel(item.category)}</span>
               <span>{item.window}</span>
               <span>{new Date(item.publishedAt).toLocaleString()}</span>
             </div>

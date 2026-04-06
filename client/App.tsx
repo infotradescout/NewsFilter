@@ -20,16 +20,22 @@ function Shell({ user, onLogout }: { user: SessionUser; onLogout: () => Promise<
   return (
     <div className="app-shell">
       <aside className="side-nav">
-        <h1>NewsFilter</h1>
-        <p>{user.email}</p>
-        <nav>
+        <div className="side-nav-top">
+          <div>
+            <h1>NewsFilter</h1>
+            <p>{user.email}</p>
+          </div>
+          <button onClick={handleLogout} className="secondary">
+            Logout
+          </button>
+        </div>
+        <nav className="main-nav">
           <NavLink to="/inbox">Inbox</NavLink>
           <NavLink to="/topics">Topics</NavLink>
           <NavLink to="/feeds">Feeds</NavLink>
-          <NavLink to="/watch-topics">Watch Topics</NavLink>
+          <NavLink to="/watch-topics">Always On</NavLink>
           {user.role === "admin" ? <NavLink to="/admin">Admin</NavLink> : null}
         </nav>
-        <button onClick={handleLogout}>Logout</button>
       </aside>
       <main className="content-area">
         <Routes>

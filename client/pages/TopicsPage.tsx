@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import type { Feed, FinanceCategory, Topic, TopicWindow } from "../api";
 import { api } from "../api";
+import { categoryHelp, categoryLabel } from "../labels";
 import { STARTER_TOPIC_PRESETS } from "../../shared/starterPack";
 
 function toList(value: string): string[] {
@@ -150,7 +151,7 @@ export default function TopicsPage({ isAdmin }: { isAdmin: boolean }) {
       <header className="page-header-row">
         <div>
           <h2>Topics</h2>
-          <p>Manage tracked macro, commodity, equity, and crypto themes.</p>
+          <p>Choose what you want to follow. We turn it into short, useful updates.</p>
         </div>
         <button onClick={() => void load()} disabled={loading}>
           Refresh
@@ -164,19 +165,20 @@ export default function TopicsPage({ isAdmin }: { isAdmin: boolean }) {
           <input value={name} onChange={(event) => setName(event.target.value)} required />
         </label>
         <label>
-          Category
+          Topic type
           <select value={category} onChange={(event) => setCategory(event.target.value as FinanceCategory)}>
-            <option value="macro">Macro</option>
-            <option value="commodities">Commodities</option>
-            <option value="equities">Equities</option>
-            <option value="crypto">Crypto</option>
+            <option value="macro">{categoryLabel("macro")}</option>
+            <option value="commodities">{categoryLabel("commodities")}</option>
+            <option value="equities">{categoryLabel("equities")}</option>
+            <option value="crypto">{categoryLabel("crypto")}</option>
           </select>
         </label>
+        <p>{categoryHelp(category)}</p>
         <label>
-          Scope
+          Who can see this topic?
           <select value={scope} onChange={(event) => setScope(event.target.value as "personal" | "shared")}> 
-            <option value="personal">Personal</option>
-            <option value="shared">Shared</option>
+            <option value="personal">Only me</option>
+            <option value="shared">My team</option>
           </select>
         </label>
         <label>
@@ -188,11 +190,11 @@ export default function TopicsPage({ isAdmin }: { isAdmin: boolean }) {
           </select>
         </label>
         <label>
-          Include terms (comma separated)
+          Include words (comma separated)
           <input value={includeTerms} onChange={(event) => setIncludeTerms(event.target.value)} />
         </label>
         <label>
-          Exclude terms (comma separated)
+          Exclude words (comma separated)
           <input value={excludeTerms} onChange={(event) => setExcludeTerms(event.target.value)} />
         </label>
         <label>
@@ -222,7 +224,7 @@ export default function TopicsPage({ isAdmin }: { isAdmin: boolean }) {
 
       <section className="panel stack">
         <h3>Quick setup: starter finance topics</h3>
-        <p>Creates four high-signal presets (macro, commodities, equities, crypto) with your active feeds attached.</p>
+        <p>Creates four beginner-friendly presets so you can start getting summaries right away.</p>
         {isAdmin ? (
           <label>
             Create as
@@ -245,7 +247,7 @@ export default function TopicsPage({ isAdmin }: { isAdmin: boolean }) {
           <article key={topic.id} className="panel stack">
             <h3>{topic.name}</h3>
             <p>
-              {topic.category} · {topic.scope} · {topic.window}
+              {categoryLabel(topic.category)} · {topic.scope === "shared" ? "team" : "only me"} · {topic.window}
             </p>
             <p>
               Include: {(topic.includeTerms || []).join(", ") || "none"}

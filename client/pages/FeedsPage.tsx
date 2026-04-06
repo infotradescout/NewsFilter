@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import type { Feed, FeedPreset } from "../api";
 import { api } from "../api";
+import { categoryLabel } from "../labels";
 
 function normalizeUrl(raw: string): string {
   try {
@@ -8,6 +9,11 @@ function normalizeUrl(raw: string): string {
   } catch {
     return raw.trim().replace(/\/$/, "");
   }
+}
+
+function feedCategoryLabel(category: FeedPreset["category"]): string {
+  if (category === "general") return "General Markets";
+  return categoryLabel(category);
 }
 
 export default function FeedsPage() {
@@ -115,7 +121,7 @@ export default function FeedsPage() {
       <header className="page-header-row">
         <div>
           <h2>Feeds</h2>
-          <p>Use one-click free finance sources, then add your own custom RSS feeds.</p>
+          <p>Choose free news sources here. No technical setup needed.</p>
         </div>
         <button onClick={() => void load()} disabled={loading}>
           Refresh
@@ -137,7 +143,7 @@ export default function FeedsPage() {
                   onChange={(event) => togglePreset(preset.key, event.target.checked)}
                 />
                 <span>
-                  <strong>{preset.name}</strong> · {preset.category}
+                  <strong>{preset.name}</strong> · {feedCategoryLabel(preset.category)}
                   <br />
                   {preset.description}
                   {installed ? (
@@ -186,6 +192,7 @@ export default function FeedsPage() {
       </form>
 
       <div className="panel">
+        <div className="table-wrap">
         <table className="table">
           <thead>
             <tr>
@@ -210,6 +217,7 @@ export default function FeedsPage() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </section>
   );
