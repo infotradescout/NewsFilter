@@ -49,25 +49,32 @@ export default function AdminPage() {
       </header>
 
       <form onSubmit={handleInvite} className="panel stack">
-        <h3>Create invite</h3>
-        <label>
-          Email
-          <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
-        </label>
-        <label>
-          Role
-          <select value={role} onChange={(event) => setRole(event.target.value as Role)}>
-            <option value="member">Member</option>
-            <option value="admin">Admin</option>
-          </select>
-        </label>
+        <h3 className="section-title">Create invite</h3>
+        <div className="form-grid-2">
+          <label>
+            Email
+            <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+          </label>
+          <label>
+            Role
+            <select value={role} onChange={(event) => setRole(event.target.value as Role)}>
+              <option value="member">Member</option>
+              <option value="admin">Admin</option>
+            </select>
+          </label>
+        </div>
         <button type="submit">Create invite</button>
-        {inviteLink ? <p className="success">Invite link: {inviteLink}</p> : null}
+        {inviteLink ? (
+          <div className="entity-card">
+            <p className="muted">Send this link to the user:</p>
+            <p className="success">{inviteLink}</p>
+          </div>
+        ) : null}
         {error ? <p className="error">{error}</p> : null}
       </form>
 
       <div className="panel">
-        <h3>Users</h3>
+        <h3 className="section-title">Users</h3>
         <div className="table-wrap">
         <table className="table">
           <thead>
@@ -89,7 +96,7 @@ export default function AdminPage() {
       </div>
 
       <div className="panel">
-        <h3>Invites</h3>
+        <h3 className="section-title">Invites</h3>
         <div className="table-wrap">
         <table className="table">
           <thead>

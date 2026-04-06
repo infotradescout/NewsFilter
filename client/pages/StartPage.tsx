@@ -154,43 +154,44 @@ export default function StartPage({ user }: StartPageProps) {
         </button>
       </header>
 
-      <section className="panel stack">
-        <h3>Step 1: Add trusted free sources</h3>
-        <p>
-          We include quality no-cost sources for markets, economy, commodities, stocks, and crypto.
-        </p>
-        <p>
-          Status: {installedPresetCount}/{FREE_FINANCE_FEED_PRESETS.length} installed
-        </p>
-        <button type="button" onClick={() => void installRecommendedSources()} disabled={busy}>
-          {busy ? "Working..." : "Install Recommended Sources"}
-        </button>
-      </section>
+      <section className="setup-grid">
+        <article className="setup-step">
+          <h3>Step 1: Install sources</h3>
+          <p className="muted">Add trusted free market feeds.</p>
+          <p className="entity-note">
+            Status: {installedPresetCount}/{FREE_FINANCE_FEED_PRESETS.length} installed
+          </p>
+          <button type="button" onClick={() => void installRecommendedSources()} disabled={busy}>
+            {busy ? "Working..." : "Install Sources"}
+          </button>
+        </article>
 
-      <section className="panel stack">
-        <h3>Step 2: Create ready-to-use topics</h3>
-        <p>One click creates beginner-friendly topic packs:</p>
-        <div className="starter-chip-row">
-          {STARTER_TOPIC_PRESETS.map((topic) => (
-            <span key={topic.key} className="starter-chip">
-              {categoryLabel(topic.category)}: {topic.name}
-            </span>
-          ))}
-        </div>
-        <p>
-          Status: {starterTopicCount}/{STARTER_TOPIC_PRESETS.length} created
-        </p>
-        <button type="button" onClick={() => void createStarterTopics()} disabled={busy}>
-          {busy ? "Working..." : "Create Starter Topics"}
-        </button>
-      </section>
+        <article className="setup-step">
+          <h3>Step 2: Create topics</h3>
+          <p className="muted">Generate beginner packs with one click.</p>
+          <div className="starter-chip-row">
+            {STARTER_TOPIC_PRESETS.slice(0, 4).map((topic) => (
+              <span key={topic.key} className="starter-chip">
+                {categoryLabel(topic.category)}
+              </span>
+            ))}
+          </div>
+          <p className="entity-note">
+            Status: {starterTopicCount}/{STARTER_TOPIC_PRESETS.length} created
+          </p>
+          <button type="button" onClick={() => void createStarterTopics()} disabled={busy}>
+            {busy ? "Working..." : "Create Topics"}
+          </button>
+        </article>
 
-      <section className="panel stack">
-        <h3>Step 3: Pull latest updates now</h3>
-        <p>Starts an immediate refresh so your inbox fills without waiting for the hourly schedule.</p>
-        <button type="button" onClick={() => void runNow()} disabled={busy}>
-          {busy ? "Starting..." : "Run Refresh Now"}
-        </button>
+        <article className="setup-step">
+          <h3>Step 3: Run first refresh</h3>
+          <p className="muted">Pull fresh results right now.</p>
+          <p className="entity-note">No need to wait for hourly sync.</p>
+          <button type="button" onClick={() => void runNow()} disabled={busy}>
+            {busy ? "Starting..." : "Run Refresh"}
+          </button>
+        </article>
       </section>
 
       {message ? <p className="success">{message}</p> : null}

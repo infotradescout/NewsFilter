@@ -160,37 +160,39 @@ export default function TopicsPage({ isAdmin }: { isAdmin: boolean }) {
       </header>
 
       <form onSubmit={handleCreate} className="panel stack">
-        <h3>Create topic</h3>
-        <p>Start simple. Add advanced keyword filters only if you need tighter results.</p>
-        <label>
-          Name
-          <input value={name} onChange={(event) => setName(event.target.value)} required />
-        </label>
-        <label>
-          Topic type
-          <select value={category} onChange={(event) => setCategory(event.target.value as FinanceCategory)}>
-            <option value="macro">{categoryLabel("macro")}</option>
-            <option value="commodities">{categoryLabel("commodities")}</option>
-            <option value="equities">{categoryLabel("equities")}</option>
-            <option value="crypto">{categoryLabel("crypto")}</option>
-          </select>
-        </label>
-        <p>{categoryHelp(category)}</p>
-        <label>
-          Who can see this topic?
-          <select value={scope} onChange={(event) => setScope(event.target.value as "personal" | "shared")}> 
-            <option value="personal">Only me</option>
-            <option value="shared">My team</option>
-          </select>
-        </label>
-        <label>
-          Time window
-          <select value={windowValue} onChange={(event) => setWindowValue(event.target.value as TopicWindow)}>
-            <option value="24h">24h</option>
-            <option value="7d">7d</option>
-            <option value="30d">30d</option>
-          </select>
-        </label>
+        <h3 className="section-title">Create topic</h3>
+        <p className="muted">Start simple. Add advanced filters only when you need tighter matching.</p>
+        <div className="form-grid-2">
+          <label>
+            Name
+            <input value={name} onChange={(event) => setName(event.target.value)} required />
+          </label>
+          <label>
+            Topic type
+            <select value={category} onChange={(event) => setCategory(event.target.value as FinanceCategory)}>
+              <option value="macro">{categoryLabel("macro")}</option>
+              <option value="commodities">{categoryLabel("commodities")}</option>
+              <option value="equities">{categoryLabel("equities")}</option>
+              <option value="crypto">{categoryLabel("crypto")}</option>
+            </select>
+          </label>
+          <label>
+            Who can see this topic?
+            <select value={scope} onChange={(event) => setScope(event.target.value as "personal" | "shared")}> 
+              <option value="personal">Only me</option>
+              <option value="shared">My team</option>
+            </select>
+          </label>
+          <label>
+            Time window
+            <select value={windowValue} onChange={(event) => setWindowValue(event.target.value as TopicWindow)}>
+              <option value="24h">24h</option>
+              <option value="7d">7d</option>
+              <option value="30d">30d</option>
+            </select>
+          </label>
+        </div>
+        <p className="muted">{categoryHelp(category)}</p>
         <label>
           Main keywords (comma separated)
           <input value={includeTerms} onChange={(event) => setIncludeTerms(event.target.value)} placeholder="example: inflation, federal reserve, cpi" />
@@ -235,8 +237,8 @@ export default function TopicsPage({ isAdmin }: { isAdmin: boolean }) {
       </form>
 
       <section className="panel stack">
-        <h3>Quick setup: starter finance topics</h3>
-        <p>Creates four beginner-friendly presets so you can start getting summaries right away.</p>
+        <h3 className="section-title">Quick setup: starter finance topics</h3>
+        <p className="muted">Creates beginner presets so you can start getting summaries right away.</p>
         {isAdmin ? (
           <label>
             Create as
@@ -256,18 +258,19 @@ export default function TopicsPage({ isAdmin }: { isAdmin: boolean }) {
 
       <div className="card-grid">
         {topics.map((topic) => (
-          <article key={topic.id} className="panel stack">
+          <article key={topic.id} className="entity-card">
             <h3>{topic.name}</h3>
-            <p>
-              {categoryLabel(topic.category)} · {topic.scope === "shared" ? "team" : "only me"} · {topic.window}
-            </p>
-            <p>
-              Include: {(topic.includeTerms || []).join(", ") || "none"}
-              <br />
-              Exclude: {(topic.excludeTerms || []).join(", ") || "none"}
-            </p>
+            <div className="meta-line">
+              <span className="meta-pill">{categoryLabel(topic.category)}</span>
+              <span className="meta-pill">{topic.scope === "shared" ? "Team" : "Personal"}</span>
+              <span className="meta-pill">{topic.window}</span>
+            </div>
+            <p className="entity-note">+ {(topic.includeTerms || []).slice(0, 4).join(", ") || "No include terms"}</p>
+            {(topic.excludeTerms || []).length > 0 ? (
+              <p className="entity-note">- {(topic.excludeTerms || []).slice(0, 4).join(", ")}</p>
+            ) : null}
             <div className="summary-actions">
-              <button onClick={() => void triggerBackfill(topic.id)}>Backfill now</button>
+              <button onClick={() => void triggerBackfill(topic.id)}>Refresh now</button>
               <button onClick={() => void removeTopic(topic.id)} className="danger">
                 Delete
               </button>

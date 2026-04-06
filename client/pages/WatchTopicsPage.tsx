@@ -72,21 +72,23 @@ export default function WatchTopicsPage({ isAdmin }: WatchTopicsPageProps) {
 
       {isAdmin ? (
         <form onSubmit={handleCreate} className="panel stack">
-          <h3>Create watch topic</h3>
-          <label>
-            Name
-            <input value={name} onChange={(event) => setName(event.target.value)} required />
-          </label>
-          <label>
-            Topic type
-            <select value={category} onChange={(event) => setCategory(event.target.value as any)}>
-              <option value="macro">{categoryLabel("macro")}</option>
-              <option value="commodities">{categoryLabel("commodities")}</option>
-              <option value="equities">{categoryLabel("equities")}</option>
-              <option value="crypto">{categoryLabel("crypto")}</option>
-            </select>
-          </label>
-          <p>{categoryHelp(category)}</p>
+          <h3 className="section-title">Create always-on topic</h3>
+          <div className="form-grid-2">
+            <label>
+              Name
+              <input value={name} onChange={(event) => setName(event.target.value)} required />
+            </label>
+            <label>
+              Topic type
+              <select value={category} onChange={(event) => setCategory(event.target.value as any)}>
+                <option value="macro">{categoryLabel("macro")}</option>
+                <option value="commodities">{categoryLabel("commodities")}</option>
+                <option value="equities">{categoryLabel("equities")}</option>
+                <option value="crypto">{categoryLabel("crypto")}</option>
+              </select>
+            </label>
+          </div>
+          <p className="muted">{categoryHelp(category)}</p>
           <label>
             Query text
             <input value={queryText} onChange={(event) => setQueryText(event.target.value)} required />
@@ -99,12 +101,14 @@ export default function WatchTopicsPage({ isAdmin }: WatchTopicsPageProps) {
 
       <div className="card-grid">
         {items.map((item) => (
-          <article className="panel stack" key={item.id}>
+          <article className="entity-card" key={item.id}>
             <h3>{item.name}</h3>
-            <p>
-              {categoryLabel(item.category)} · {item.isActive ? "active" : "paused"}
-            </p>
-            <p>{item.queryText}</p>
+            <div className="meta-line">
+              <span className="meta-pill">{categoryLabel(item.category)}</span>
+              <span className="meta-pill">{item.isActive ? "Active" : "Paused"}</span>
+              <span className="meta-pill">{item.followed ? "Following" : "Muted"}</span>
+            </div>
+            <p className="entity-note">{item.queryText}</p>
             <div className="summary-actions">
               <button onClick={() => void toggleFollow(item)}>{item.followed ? "Unfollow" : "Follow"}</button>
               {isAdmin ? (

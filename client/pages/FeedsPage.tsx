@@ -129,13 +129,13 @@ export default function FeedsPage() {
       </header>
 
       <section className="panel stack">
-        <h3>Quick setup: best free finance sources</h3>
-        <p>Tap once to add quality free sources. This is the fastest way to get useful updates.</p>
+        <h3 className="section-title">Quick setup: best free finance sources</h3>
+        <p className="muted">Tap once to add quality free sources. Fastest way to improve coverage.</p>
         <div className="stack">
           {presets.map((preset) => {
             const installed = existingUrlSet.has(normalizeUrl(preset.url));
             return (
-              <label key={preset.key} className="checkbox-row preset-row">
+              <label key={preset.key} className="checkbox-row preset-row entity-card">
                 <input
                   type="checkbox"
                   checked={selectedPresetKeys.includes(preset.key)}
@@ -145,7 +145,7 @@ export default function FeedsPage() {
                 <span>
                   <strong>{preset.name}</strong> · {feedCategoryLabel(preset.category)}
                   <br />
-                  {preset.description}
+                  <span className="muted">{preset.description}</span>
                   {installed ? (
                     <>
                       <br />
@@ -177,21 +177,24 @@ export default function FeedsPage() {
       </section>
 
       <form onSubmit={handleSubmit} className="panel stack">
-        <h3>Add feed</h3>
-        <label>
-          Name
-          <input value={name} onChange={(event) => setName(event.target.value)} required />
-        </label>
-        <label>
-          URL
-          <input type="url" value={url} onChange={(event) => setUrl(event.target.value)} required />
-        </label>
+        <h3 className="section-title">Add custom feed</h3>
+        <div className="form-grid-2">
+          <label>
+            Name
+            <input value={name} onChange={(event) => setName(event.target.value)} required />
+          </label>
+          <label>
+            URL
+            <input type="url" value={url} onChange={(event) => setUrl(event.target.value)} required />
+          </label>
+        </div>
         {error ? <p className="error">{error}</p> : null}
         {success ? <p className="success">{success}</p> : null}
         <button type="submit">Add feed</button>
       </form>
 
       <div className="panel">
+        <h3 className="section-title">Installed sources</h3>
         <div className="table-wrap">
         <table className="table">
           <thead>
