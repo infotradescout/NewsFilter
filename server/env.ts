@@ -7,6 +7,17 @@ function nonEmpty(value: string | undefined): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
+function normalizeUrl(value: string | undefined): string | undefined {
+  const candidate = nonEmpty(value);
+  if (!candidate) return undefined;
+  try {
+    const parsed = new URL(candidate);
+    return parsed.toString().replace(/\/$/, "");
+  } catch {
+    return undefined;
+  }
+}
+
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().default(5000),
@@ -30,8 +41,8 @@ const parsedEnv = envSchema.parse({
   SEED_ADMIN_EMAIL: nonEmpty(process.env.SEED_ADMIN_EMAIL),
   SEED_ADMIN_PASSWORD: nonEmpty(process.env.SEED_ADMIN_PASSWORD),
   APP_BASE_URL:
-    nonEmpty(process.env.APP_BASE_URL) ??
-    nonEmpty(process.env.RENDER_EXTERNAL_URL) ??
+    normalizeUrl(process.env.APP_BASE_URL) ??
+    normalizeUrl(process.env.RENDER_EXTERNAL_URL) ??
     "http://localhost:5173",
 });
 
