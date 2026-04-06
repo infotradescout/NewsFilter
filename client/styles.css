@@ -1,8 +1,8 @@
 :root {
   font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
   line-height: 1.4;
-  color: #13233d;
-  background: radial-gradient(circle at 20% 20%, #d7e9ff 0%, #f3f6fb 45%, #eef2f7 100%);
+  color: #16263d;
+  background: radial-gradient(circle at 10% 5%, #d9ecff 0%, #eef4fb 45%, #edf2f7 100%);
 }
 
 * {
@@ -11,6 +11,8 @@
 
 body {
   margin: 0;
+  color: inherit;
+  background: transparent;
 }
 
 a {
@@ -26,11 +28,12 @@ button {
 button {
   cursor: pointer;
   border: 1px solid #1f4f78;
-  background: #1f4f78;
+  background: linear-gradient(180deg, #2b5f8d 0%, #1f4f78 100%);
   color: #fff;
   padding: 0.6rem 0.9rem;
   min-height: 42px;
   border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(21, 52, 84, 0.16);
 }
 
 button:disabled {
@@ -41,6 +44,7 @@ button:disabled {
 .secondary {
   background: #ffffff;
   color: #1f4f78;
+  box-shadow: none;
 }
 
 .centered-page {
@@ -54,8 +58,9 @@ button:disabled {
   width: min(480px, 100%);
   background: #ffffff;
   border: 1px solid #d6dce7;
-  border-radius: 14px;
-  padding: 1.25rem;
+  border-radius: 16px;
+  box-shadow: 0 14px 40px rgba(18, 34, 56, 0.1);
+  padding: 1.35rem;
 }
 
 .stack {
@@ -96,12 +101,13 @@ select {
 
 .side-nav {
   border-right: 1px solid #d6dce7;
-  background: #ffffffcc;
+  background: linear-gradient(180deg, #ffffffdd 0%, #f8fbffdd 100%);
   backdrop-filter: blur(6px);
   padding: 1rem;
   display: grid;
   grid-auto-rows: min-content;
   gap: 0.8rem;
+  box-shadow: inset -1px 0 0 #dce5f2;
 }
 
 .side-nav-top {
@@ -127,14 +133,18 @@ select {
 .side-nav a {
   text-decoration: none;
   padding: 0.6rem 0.65rem;
-  border-radius: 8px;
-  border: 1px solid transparent;
+  border-radius: 10px;
+  border: 1px solid #e4ebf5;
+  background: #f9fbfe;
+  color: #1c3554;
+  font-weight: 500;
 }
 
 .side-nav a.active {
-  background: #dceeff;
+  background: linear-gradient(180deg, #d9ebff 0%, #cfe5ff 100%);
   font-weight: 600;
   border-color: #b4d4f0;
+  box-shadow: 0 6px 16px rgba(26, 76, 123, 0.18);
 }
 
 .content-area {
@@ -156,8 +166,9 @@ select {
 .panel {
   background: #fff;
   border: 1px solid #d6dce7;
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 1rem;
+  box-shadow: 0 8px 26px rgba(18, 34, 56, 0.06);
 }
 
 .card-grid {
@@ -169,10 +180,11 @@ select {
 .summary-card {
   background: #fff;
   border: 1px solid #d6dce7;
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 0.9rem;
   display: grid;
   gap: 0.6rem;
+  box-shadow: 0 8px 22px rgba(18, 34, 56, 0.06);
 }
 
 .summary-card.is-read {
@@ -184,6 +196,13 @@ select {
   gap: 0.5rem;
   flex-wrap: wrap;
   font-size: 0.8rem;
+}
+
+.summary-meta span {
+  background: #f2f7ff;
+  border: 1px solid #dce8f8;
+  border-radius: 999px;
+  padding: 0.2rem 0.45rem;
 }
 
 .summary-actions {
@@ -219,10 +238,10 @@ select {
 
 .preset-row {
   align-items: flex-start;
-  padding: 0.45rem 0.4rem;
+  padding: 0.55rem 0.5rem;
   border: 1px solid #e3e9f1;
-  border-radius: 8px;
-  background: #f9fbff;
+  border-radius: 10px;
+  background: #f7fbff;
 }
 
 .feed-box {
@@ -234,6 +253,22 @@ select {
 .danger {
   background: #9f2536;
   border-color: #9f2536;
+}
+
+.starter-chip-row {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.starter-chip {
+  display: inline-block;
+  border: 1px solid #d4e2f3;
+  background: #f3f8ff;
+  color: #1c3554;
+  border-radius: 999px;
+  padding: 0.3rem 0.55rem;
+  font-size: 0.84rem;
 }
 
 @media (max-width: 900px) {

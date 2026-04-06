@@ -33,7 +33,7 @@ export default function LoginPage({ onLoggedIn }: LoginPageProps) {
     <main className="centered-page">
       <div className="auth-card">
         <h1>NewsFilter</h1>
-        <p>Finance-first news intelligence for your team.</p>
+        <p>Simple market news tracking for teams.</p>
 
         <form onSubmit={handleSubmit} className="stack">
           <label>

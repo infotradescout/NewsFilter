@@ -43,8 +43,8 @@ export default function AdminPage() {
     <section className="page-stack">
       <header className="page-header-row">
         <div>
-          <h2>Admin</h2>
-          <p>Invite people and manage account access.</p>
+          <h2>Team</h2>
+          <p>Invite people and manage who has access.</p>
         </div>
       </header>
 

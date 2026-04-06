@@ -63,7 +63,7 @@ export default function WatchTopicsPage({ isAdmin }: WatchTopicsPageProps) {
       <header className="page-header-row">
         <div>
           <h2>Always-On Topics</h2>
-          <p>Always-on topics that run in the background every hour.</p>
+          <p>Background topics that keep running every hour automatically.</p>
         </div>
         <button onClick={() => void load()} disabled={loading}>
           Refresh

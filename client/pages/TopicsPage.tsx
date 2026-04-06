@@ -28,6 +28,7 @@ export default function TopicsPage({ isAdmin }: { isAdmin: boolean }) {
   const [excludeTerms, setExcludeTerms] = useState("");
   const [exactPhrases, setExactPhrases] = useState("");
   const [selectedFeedIds, setSelectedFeedIds] = useState<string[]>([]);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -68,7 +69,7 @@ export default function TopicsPage({ isAdmin }: { isAdmin: boolean }) {
           excludeTerms: toList(excludeTerms),
           exactPhrases: toList(exactPhrases),
         },
-        feedIds: selectedFeedIds,
+        feedIds: selectedFeedIds.length > 0 ? selectedFeedIds : feeds.filter((feed) => feed.active).map((feed) => feed.id),
       });
 
       setName("");
@@ -160,6 +161,7 @@ export default function TopicsPage({ isAdmin }: { isAdmin: boolean }) {
 
       <form onSubmit={handleCreate} className="panel stack">
         <h3>Create topic</h3>
+        <p>Start simple. Add advanced keyword filters only if you need tighter results.</p>
         <label>
           Name
           <input value={name} onChange={(event) => setName(event.target.value)} required />
@@ -190,33 +192,43 @@ export default function TopicsPage({ isAdmin }: { isAdmin: boolean }) {
           </select>
         </label>
         <label>
-          Include words (comma separated)
-          <input value={includeTerms} onChange={(event) => setIncludeTerms(event.target.value)} />
-        </label>
-        <label>
-          Exclude words (comma separated)
-          <input value={excludeTerms} onChange={(event) => setExcludeTerms(event.target.value)} />
-        </label>
-        <label>
-          Exact phrases (comma separated)
-          <input value={exactPhrases} onChange={(event) => setExactPhrases(event.target.value)} />
+          Main keywords (comma separated)
+          <input value={includeTerms} onChange={(event) => setIncludeTerms(event.target.value)} placeholder="example: inflation, federal reserve, cpi" />
         </label>
 
-        <fieldset className="feed-box">
-          <legend>Attach feeds</legend>
-          {feeds.map((feed) => (
-            <label key={feed.id} className="checkbox-row">
-              <input
-                type="checkbox"
-                checked={selectedFeedIds.includes(feed.id)}
-                onChange={(event) => toggleFeed(feed.id, event.target.checked)}
-              />
-              <span>
-                {feed.name} ({feed.type})
-              </span>
+        <button type="button" className="secondary" onClick={() => setAdvancedOpen((prev) => !prev)}>
+          {advancedOpen ? "Hide advanced filters" : "Show advanced filters"}
+        </button>
+
+        {advancedOpen ? (
+          <>
+            <label>
+              Exclude words (comma separated)
+              <input value={excludeTerms} onChange={(event) => setExcludeTerms(event.target.value)} />
             </label>
-          ))}
-        </fieldset>
+            <label>
+              Exact phrases (comma separated)
+              <input value={exactPhrases} onChange={(event) => setExactPhrases(event.target.value)} />
+            </label>
+
+            <fieldset className="feed-box">
+              <legend>Choose sources manually (optional)</legend>
+              <p>If none selected, all active sources are used automatically.</p>
+              {feeds.map((feed) => (
+                <label key={feed.id} className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={selectedFeedIds.includes(feed.id)}
+                    onChange={(event) => toggleFeed(feed.id, event.target.checked)}
+                  />
+                  <span>
+                    {feed.name} ({feed.type})
+                  </span>
+                </label>
+              ))}
+            </fieldset>
+          </>
+        ) : null}
 
         {error ? <p className="error">{error}</p> : null}
         <button type="submit">Create topic</button>

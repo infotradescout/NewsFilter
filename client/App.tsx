@@ -6,6 +6,7 @@ import AdminPage from "./pages/AdminPage";
 import FeedsPage from "./pages/FeedsPage";
 import InboxPage from "./pages/InboxPage";
 import LoginPage from "./pages/LoginPage";
+import StartPage from "./pages/StartPage";
 import TopicsPage from "./pages/TopicsPage";
 import WatchTopicsPage from "./pages/WatchTopicsPage";
 
@@ -30,21 +31,23 @@ function Shell({ user, onLogout }: { user: SessionUser; onLogout: () => Promise<
           </button>
         </div>
         <nav className="main-nav">
-          <NavLink to="/inbox">Inbox</NavLink>
+          <NavLink to="/start">Start</NavLink>
+          <NavLink to="/inbox">Updates</NavLink>
           <NavLink to="/topics">Topics</NavLink>
-          <NavLink to="/feeds">Feeds</NavLink>
+          <NavLink to="/feeds">Sources</NavLink>
           <NavLink to="/watch-topics">Always On</NavLink>
-          {user.role === "admin" ? <NavLink to="/admin">Admin</NavLink> : null}
+          {user.role === "admin" ? <NavLink to="/admin">Team</NavLink> : null}
         </nav>
       </aside>
       <main className="content-area">
         <Routes>
+          <Route path="/start" element={<StartPage user={user} />} />
           <Route path="/inbox" element={<InboxPage />} />
           <Route path="/topics" element={<TopicsPage isAdmin={user.role === "admin"} />} />
           <Route path="/feeds" element={<FeedsPage />} />
           <Route path="/watch-topics" element={<WatchTopicsPage isAdmin={user.role === "admin"} />} />
           {user.role === "admin" ? <Route path="/admin" element={<AdminPage />} /> : null}
-          <Route path="*" element={<Navigate to="/inbox" replace />} />
+          <Route path="*" element={<Navigate to="/start" replace />} />
         </Routes>
       </main>
     </div>
@@ -83,7 +86,7 @@ export default function App() {
       <Route path="/accept-invite" element={<AcceptInvitePage onAccepted={refreshSession} />} />
       <Route
         path="/login"
-        element={user ? <Navigate to="/inbox" replace /> : <LoginPage onLoggedIn={refreshSession} />}
+        element={user ? <Navigate to="/start" replace /> : <LoginPage onLoggedIn={refreshSession} />}
       />
       <Route
         path="/*"

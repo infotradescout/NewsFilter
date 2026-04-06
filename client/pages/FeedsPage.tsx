@@ -130,7 +130,7 @@ export default function FeedsPage() {
 
       <section className="panel stack">
         <h3>Quick setup: best free finance sources</h3>
-        <p>Recommended no-cost feeds for macro, commodities, equities, and crypto coverage.</p>
+        <p>Tap once to add quality free sources. This is the fastest way to get useful updates.</p>
         <div className="stack">
           {presets.map((preset) => {
             const installed = existingUrlSet.has(normalizeUrl(preset.url));
@@ -168,7 +168,7 @@ export default function FeedsPage() {
               )
             }
           >
-            Select all missing
+            Select all
           </button>
           <button type="button" onClick={() => void installSelectedPresets()} disabled={installing || loading}>
             {installing ? "Installing..." : "Install selected sources"}

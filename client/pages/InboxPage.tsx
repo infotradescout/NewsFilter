@@ -34,8 +34,8 @@ export default function InboxPage() {
     <section className="page-stack">
       <header className="page-header-row">
         <div>
-          <h2>Inbox</h2>
-          <p>Short updates from your selected topics.</p>
+          <h2>Updates</h2>
+          <p>Your latest summaries, ranked by likely market importance.</p>
         </div>
         <button onClick={() => void load()} disabled={loading}>
           Refresh
