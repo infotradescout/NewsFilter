@@ -1,6 +1,12 @@
 import "dotenv/config";
 import { z } from "zod";
 
+function nonEmpty(value: string | undefined): string | undefined {
+  if (value === undefined) return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().default(5000),
@@ -20,7 +26,13 @@ const envSchema = z.object({
 
 const parsedEnv = envSchema.parse({
   ...process.env,
-  APP_BASE_URL: process.env.APP_BASE_URL ?? process.env.RENDER_EXTERNAL_URL ?? "http://localhost:5173",
+  OPENAI_API_KEY: nonEmpty(process.env.OPENAI_API_KEY),
+  SEED_ADMIN_EMAIL: nonEmpty(process.env.SEED_ADMIN_EMAIL),
+  SEED_ADMIN_PASSWORD: nonEmpty(process.env.SEED_ADMIN_PASSWORD),
+  APP_BASE_URL:
+    nonEmpty(process.env.APP_BASE_URL) ??
+    nonEmpty(process.env.RENDER_EXTERNAL_URL) ??
+    "http://localhost:5173",
 });
 
 export const env = parsedEnv;
