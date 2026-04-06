@@ -218,6 +218,17 @@ select {
   font-size: 1.08rem;
 }
 
+.live-pill {
+  width: fit-content;
+  border: 1px solid #9bdebb;
+  background: #eafaf1;
+  color: #126740;
+  border-radius: 999px;
+  padding: 0.1rem 0.42rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
 .topbar-actions {
   display: flex;
   align-items: center;
@@ -231,6 +242,10 @@ select {
   padding: 0.33rem 0.62rem;
   font-size: 0.76rem;
   color: var(--text-1);
+}
+
+.mobile-bottom-nav {
+  display: none;
 }
 
 .page-stack {
@@ -847,7 +862,7 @@ select {
   }
 
   .content-area {
-    padding: 0.2rem 0.25rem 1rem;
+    padding: 0.2rem 0.25rem 4.5rem;
   }
 
   .topbar {
@@ -870,6 +885,39 @@ select {
     min-height: 36px;
     padding: 0.42rem 0.58rem;
     font-size: 0.8rem;
+  }
+
+  .mobile-bottom-nav {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.35rem;
+    position: fixed;
+    bottom: 0.45rem;
+    left: 0.45rem;
+    right: 0.45rem;
+    z-index: 90;
+    background: #fffffffa;
+    border: 1px solid #dbe5f1;
+    border-radius: 14px;
+    padding: 0.34rem;
+    box-shadow: 0 10px 24px rgba(8, 25, 46, 0.15);
+  }
+
+  .mobile-bottom-nav a {
+    text-decoration: none;
+    text-align: center;
+    color: #204261;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    padding: 0.34rem 0.2rem;
+    font-size: 0.74rem;
+    font-weight: 600;
+  }
+
+  .mobile-bottom-nav a.active {
+    background: #e9f3ff;
+    border-color: #bfd9f2;
+    color: #0f4f87;
   }
 
   .panel {

@@ -33,13 +33,24 @@ function Shell({ user, onLogout }: { user: SessionUser; onLogout: () => Promise<
     if (tab === "watch") navigate("/watch-topics");
   }
 
+  const navItems = useMemo(
+    () => [
+      { to: "/dashboard", label: "Home" },
+      { to: "/inbox", label: "Feed" },
+      { to: "/topics", label: "Themes" },
+      { to: "/feeds", label: "Sources" },
+      { to: "/watch-topics", label: "Always On" },
+    ],
+    []
+  );
+
   const sectionTitleByPath: Record<string, string> = {
-    "/dashboard": "Dashboard",
-    "/inbox": "Updates",
-    "/topics": "Topics",
+    "/dashboard": "Home",
+    "/inbox": "Live Feed",
+    "/topics": "Themes",
     "/feeds": "Sources",
     "/watch-topics": "Always On",
-    "/admin": "Team",
+    "/admin": "Team Access",
   };
   const sectionTitle = sectionTitleByPath[location.pathname] ?? "MarketFilter";
 
@@ -59,7 +70,7 @@ function Shell({ user, onLogout }: { user: SessionUser; onLogout: () => Promise<
             <span className="brand-mark" />
             <div>
               <h1>MarketFilter</h1>
-              <p>Market Tracking</p>
+              <p>Live Intelligence</p>
             </div>
           </div>
           <button onClick={handleLogout} className="secondary">
@@ -67,17 +78,20 @@ function Shell({ user, onLogout }: { user: SessionUser; onLogout: () => Promise<
           </button>
         </div>
         <nav className="main-nav">
-          <NavLink to="/dashboard">Dashboard</NavLink>
-          <NavLink to="/inbox">Updates</NavLink>
-          <NavLink to="/topics">Topics</NavLink>
-          <NavLink to="/feeds">Sources</NavLink>
-          <NavLink to="/watch-topics">Always On</NavLink>
+          {navItems.map((item) => (
+            <NavLink key={item.to} to={item.to}>
+              {item.label}
+            </NavLink>
+          ))}
           {user.role === "admin" ? <NavLink to="/admin">Team</NavLink> : null}
         </nav>
       </aside>
       <main className="content-area">
         <header className="topbar">
-          <h2>{sectionTitle}</h2>
+          <div className="stack">
+            <h2>{sectionTitle}</h2>
+            <span className="live-pill">Live</span>
+          </div>
           <div className="topbar-actions">
             <button
               type="button"
@@ -106,6 +120,13 @@ function Shell({ user, onLogout }: { user: SessionUser; onLogout: () => Promise<
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </main>
+      <nav className="mobile-bottom-nav">
+        {navItems.slice(0, 4).map((item) => (
+          <NavLink key={item.to} to={item.to}>
+            {item.label}
+          </NavLink>
+        ))}
+      </nav>
     </div>
   );
 }

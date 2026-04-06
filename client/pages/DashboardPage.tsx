@@ -249,7 +249,35 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
     };
   }, [priceSymbols.join(",")]);
 
-  const visibleWidgets = layout.widgets.filter((widget) => !widget.hidden);
+  const visibleWidgets = useMemo(() => {
+    const base = layout.widgets.filter((widget) => !widget.hidden);
+    const weight = (widget: DashboardWidgetLayout) => {
+      if (widget.type === "price") return 0;
+      if (widget.type === "topic") return 1;
+      return 2;
+    };
+    const widgetTime = (widget: DashboardWidgetLayout) => {
+      if (widget.type === "topic") {
+        const iso = topicMap.get(widget.refId)?.last?.publishedAt;
+        return iso ? new Date(iso).getTime() : 0;
+      }
+      if (widget.type === "watch") {
+        const iso = watchMap.get(widget.refId)?.last?.publishedAt;
+        return iso ? new Date(iso).getTime() : 0;
+      }
+      const symbol = (widget.symbol || widget.refId || "").toUpperCase();
+      const iso = quotes[symbol]?.asOf;
+      return iso ? new Date(iso).getTime() : 0;
+    };
+
+    return [...base].sort((a, b) => {
+      const w = weight(a) - weight(b);
+      if (w !== 0) return w;
+      return widgetTime(b) - widgetTime(a);
+    });
+  }, [layout.widgets, topicMap, watchMap, quotes]);
+
+  const totalTopicSignals = topics.filter((item) => item.last).length + watchTopics.filter((item) => item.last).length;
   const activeQuoteValues = Object.values(quotes).filter((quote) => quote.changePct !== null && quote.changePct !== undefined);
   const gainers = activeQuoteValues.filter((quote) => (quote.changePct ?? 0) > 0).length;
   const losers = activeQuoteValues.filter((quote) => (quote.changePct ?? 0) < 0).length;
@@ -408,8 +436,8 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
     <section className="page-stack">
       <header className="page-header-row">
         <div>
-          <h2>Dashboard</h2>
-          <p>Fast market signals. Minimal text. Decision-ready cards.</p>
+          <h2>Command Center</h2>
+          <p>Live markets first, then ranked signals. Built for fast decisions.</p>
         </div>
         <div className="summary-actions">
           <button className="secondary" onClick={() => setToolsOpen((prev) => !prev)}>
@@ -451,10 +479,28 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
           </strong>
         </article>
         <article className="pulse-card">
-          <span className="tiny-meta">Cards</span>
-          <strong>{visibleWidgets.length} active</strong>
+          <span className="tiny-meta">Coverage</span>
+          <strong>{totalTopicSignals} active signals</strong>
         </article>
       </section>
+
+      {totalTopicSignals === 0 ? (
+        <section className="panel stack">
+          <h3 className="section-title">Signal feed is warming up</h3>
+          <p className="muted">New summaries usually appear within 1-2 minutes after refresh.</p>
+          <div className="summary-actions">
+            <button type="button" onClick={() => void refreshNow()} disabled={refreshing}>
+              {refreshing ? "Refreshing..." : "Run refresh now"}
+            </button>
+            <button className="secondary" type="button" onClick={() => onOpenTab?.("topics")}>
+              Review themes
+            </button>
+            <button className="secondary" type="button" onClick={() => onOpenTab?.("feeds")}>
+              Review sources
+            </button>
+          </div>
+        </section>
+      ) : null}
 
       {toolsOpen || editMode ? (
         <>
@@ -717,7 +763,7 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
                   <span>{item.window}</span>
                   <span className={`signal-chip tone-${item.last?.tone ?? "neutral"}`}>{toneLabel(item.last?.tone)}</span>
                 </div>
-                <p className="dash-headline">{truncateText(item.last?.headline, 86) || "No summary yet"}</p>
+                <p className="dash-headline">{truncateText(item.last?.headline, 86) || "Monitoring live feeds for this theme."}</p>
                 {expandedNow ? (
                   <div className="stack">
                     <p className="tiny-meta">{truncateText(item.last?.bullet, 130) || "Run refresh for latest signal."}</p>
@@ -774,7 +820,7 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
                   <span>Always on</span>
                   <span className={`signal-chip tone-${item.last?.tone ?? "neutral"}`}>{toneLabel(item.last?.tone)}</span>
                 </div>
-                <p className="dash-headline">{truncateText(item.last?.headline, 86) || "No summary yet"}</p>
+                <p className="dash-headline">{truncateText(item.last?.headline, 86) || "Monitoring live feeds for this watch item."}</p>
                 {expandedNow ? (
                   <div className="stack">
                     <p className="tiny-meta">{truncateText(item.last?.bullet || item.queryText, 130)}</p>
