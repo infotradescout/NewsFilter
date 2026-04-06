@@ -12,6 +12,25 @@ function truncateText(text: string, maxLen: number): string {
   return `${text.slice(0, maxLen - 1).trimEnd()}…`;
 }
 
+function classifyTone(text: string): "pos" | "neg" | "flat" {
+  const t = text.toLowerCase();
+  const positive = ["beats", "rise", "rises", "surge", "gains", "up", "bull", "record high", "strong"];
+  const negative = ["misses", "fall", "falls", "drop", "drops", "down", "bear", "cuts", "warning", "weak"];
+  if (positive.some((token) => t.includes(token))) return "pos";
+  if (negative.some((token) => t.includes(token))) return "neg";
+  return "flat";
+}
+
+function conciseLine(item: InboxItem): string {
+  const headline = item.headline.trim();
+  const bullet = (item.bullets[0] ?? "").trim();
+  if (!bullet) return "Market signal updated.";
+  const h = headline.toLowerCase();
+  const b = bullet.toLowerCase();
+  if (h === b || b.includes(h)) return "Potential market-moving update.";
+  return bullet;
+}
+
 export default function InboxPage() {
   const [items, setItems] = useState<InboxItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -105,14 +124,17 @@ export default function InboxPage() {
 
       <div className="card-grid compact-feed">
         {items.map((item) => (
-          <article className={`summary-card summary-card-compact ${item.read ? "is-read" : ""}`} key={item.id}>
+          <article
+            className={`summary-card summary-card-compact tone-${classifyTone(`${item.headline} ${item.bullets[0] ?? ""}`)} ${item.read ? "is-read" : ""}`}
+            key={item.id}
+          >
             <div className="summary-meta">
               <span>{categoryLabel(item.category)}</span>
               <span>{item.window}</span>
               <span>{new Date(item.publishedAt).toLocaleTimeString()}</span>
             </div>
-            <h3>{truncateText(item.headline, 72)}</h3>
-            <p className="summary-line">{truncateText(item.bullets[0] ?? "Market-moving update detected.", 78)}</p>
+            <h3>{truncateText(item.headline, 62)}</h3>
+            <p className="summary-line">{truncateText(conciseLine(item), 62)}</p>
             <div className="summary-actions">
               <a href={item.sourceLink} target="_blank" rel="noreferrer">
                 Source
