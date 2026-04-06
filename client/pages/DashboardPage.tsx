@@ -99,6 +99,7 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -109,11 +110,13 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
   const topicMap = useMemo(() => new Map(topics.map((item) => [item.id, item])), [topics]);
   const watchMap = useMemo(() => new Map(watchTopics.map((item) => [item.id, item])), [watchTopics]);
 
-  async function load() {
-    setLoading(true);
+  async function load(options?: { fresh?: boolean; quiet?: boolean }) {
+    const fresh = options?.fresh ?? false;
+    const quiet = options?.quiet ?? false;
+    if (!quiet) setLoading(true);
     setError(null);
     try {
-      const [dataRes, layoutRes] = await Promise.all([api.getDashboardData(), api.getDashboardLayout()]);
+      const [dataRes, layoutRes] = await Promise.all([api.getDashboardData(fresh), api.getDashboardLayout()]);
       setTopics(dataRes.topics);
       setWatchTopics(dataRes.watchTopics);
       setDefaultPriceSymbols(dataRes.defaultPriceSymbols);
@@ -141,7 +144,7 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load dashboard");
     } finally {
-      setLoading(false);
+      if (!quiet) setLoading(false);
     }
   }
 
@@ -162,6 +165,28 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
   useEffect(() => {
     void load();
   }, []);
+
+  async function refreshNow() {
+    setRefreshing(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const response = await api.refreshDashboard();
+      setMessage(
+        response.queuedTopics > 0
+          ? `Refreshing ${response.queuedTopics} topics now...`
+          : "No active topics found yet."
+      );
+      await new Promise((resolve) => setTimeout(resolve, 3500));
+      await load({ fresh: true, quiet: true });
+      setMessage("Dashboard updated.");
+      setTimeout(() => setMessage(null), 1600);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to refresh dashboard");
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   const priceSymbols = useMemo(() => {
     const fromWidgets = layout.widgets
@@ -372,8 +397,8 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
           <button onClick={() => void saveLayout(layout)} disabled={saving}>
             {saving ? "Saving..." : "Save"}
           </button>
-          <button className="secondary" onClick={() => void load()}>
-            Refresh
+          <button className="secondary" onClick={() => void refreshNow()} disabled={refreshing}>
+            {refreshing ? "Refreshing..." : "Refresh now"}
           </button>
         </div>
       </header>

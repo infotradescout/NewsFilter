@@ -14,6 +14,7 @@ import {
 } from "../../shared/schema";
 import { db } from "../db";
 import { requireAuth } from "../middleware/auth";
+import { runTopicSync } from "../services/news/syncTopic";
 
 const dashboardWidgetSchema = z.object({
   id: z.string().min(1),
@@ -120,26 +121,26 @@ async function getCachedQuotes(symbols: string[]) {
   const quoteUrl = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(key)}`;
   const response = await fetch(quoteUrl, {
     headers: {
-      "User-Agent": "NewsFilter/1.0",
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+      Accept: "application/json,text/plain,*/*",
     },
   });
-  if (!response.ok) {
-    throw new Error(`Price API HTTP ${response.status}`);
-  }
-
-  const payload = (await response.json()) as {
-    quoteResponse?: {
-      result?: Array<{
-        symbol?: string;
-        shortName?: string;
-        regularMarketPrice?: number;
-        regularMarketChange?: number;
-        regularMarketChangePercent?: number;
-        regularMarketTime?: number;
-        currency?: string;
-      }>;
-    };
-  };
+  const payload = response.ok
+    ? ((await response.json()) as {
+        quoteResponse?: {
+          result?: Array<{
+            symbol?: string;
+            shortName?: string;
+            regularMarketPrice?: number;
+            regularMarketChange?: number;
+            regularMarketChangePercent?: number;
+            regularMarketTime?: number;
+            currency?: string;
+          }>;
+        };
+      })
+    : {};
 
   const result = payload.quoteResponse?.result ?? [];
   const bySymbol = new Map(result.map((item) => [item.symbol, item]));
@@ -157,6 +158,66 @@ async function getCachedQuotes(symbols: string[]) {
       currency: item.currency ?? "USD",
     }));
 
+  const quotedSymbols = new Set(quotes.map((q) => q.symbol));
+  const missingSymbols = normalized.filter((symbol) => !quotedSymbols.has(symbol));
+
+  if (missingSymbols.length > 0) {
+    const fallbackRows = await Promise.all(
+      missingSymbols.slice(0, 20).map(async (symbol) => {
+        try {
+          const chartResponse = await fetch(
+            `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1d&interval=5m`,
+            {
+              headers: {
+                "User-Agent":
+                  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+                Accept: "application/json,text/plain,*/*",
+              },
+            }
+          );
+          if (!chartResponse.ok) return null;
+          const chartPayload = (await chartResponse.json()) as {
+            chart?: {
+              result?: Array<{
+                meta?: {
+                  symbol?: string;
+                  shortName?: string;
+                  regularMarketPrice?: number;
+                  chartPreviousClose?: number;
+                  regularMarketTime?: number;
+                  currency?: string;
+                };
+              }>;
+            };
+          };
+
+          const meta = chartPayload.chart?.result?.[0]?.meta;
+          if (!meta?.symbol || meta.regularMarketPrice === undefined || meta.regularMarketPrice === null) return null;
+
+          const prev = meta.chartPreviousClose ?? null;
+          const change = prev !== null ? meta.regularMarketPrice - prev : null;
+          const changePct = prev && prev !== 0 ? (change! / prev) * 100 : null;
+
+          return {
+            symbol: meta.symbol,
+            name: meta.shortName ?? meta.symbol,
+            price: meta.regularMarketPrice,
+            change,
+            changePct,
+            asOf: meta.regularMarketTime ? new Date(meta.regularMarketTime * 1000).toISOString() : null,
+            currency: meta.currency ?? "USD",
+          };
+        } catch {
+          return null;
+        }
+      })
+    );
+
+    for (const row of fallbackRows) {
+      if (row) quotes.push(row);
+    }
+  }
+
   quoteCache.set(key, {
     expiresAt: now + QUOTE_CACHE_MS,
     quotes,
@@ -171,7 +232,8 @@ export function registerDashboardRoutes(app: Express): void {
     const cacheKey = user.id;
     const now = Date.now();
     const cached = dashboardCache.get(cacheKey);
-    if (cached && cached.expiresAt > now) {
+    const skipCache = String(req.query.fresh || "") === "true";
+    if (!skipCache && cached && cached.expiresAt > now) {
       res.json(cached.payload);
       return;
     }
@@ -330,6 +392,29 @@ export function registerDashboardRoutes(app: Express): void {
     });
 
     res.json(payload);
+  });
+
+  app.post("/api/dashboard/refresh", requireAuth, async (req, res) => {
+    const user = req.session.user!;
+    const accessTopics =
+      user.role === "admin"
+        ? await db.query.topics.findMany({ where: eq(topics.active, true) })
+        : await db.query.topics.findMany({
+            where: and(
+              eq(topics.active, true),
+              or(eq(topics.scope, "shared"), and(eq(topics.scope, "personal"), eq(topics.ownerUserId, user.id)))
+            ),
+          });
+
+    const topicIds = accessTopics.map((topic) => topic.id);
+    for (const topicId of topicIds) {
+      void runTopicSync(topicId, "manual").catch((error) => {
+        console.error("[dashboard] manual refresh failed", error);
+      });
+    }
+
+    dashboardCache.delete(user.id);
+    res.status(202).json({ ok: true, queuedTopics: topicIds.length });
   });
 
   app.get("/api/dashboard/layout", requireAuth, async (req, res) => {

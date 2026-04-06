@@ -259,7 +259,7 @@ export const api = {
       body: JSON.stringify(payload),
     }),
   listJobs: () => request<{ jobRuns: JobRun[] }>("/api/jobs/latest"),
-  getDashboardData: () =>
+  getDashboardData: (fresh = false) =>
     request<{
       topics: DashboardTopicCard[];
       watchTopics: DashboardWatchCard[];
@@ -267,8 +267,9 @@ export const api = {
       portfolio: PortfolioPosition[];
       alertRules: AlertRule[];
     }>(
-      "/api/dashboard/data"
+      fresh ? "/api/dashboard/data?fresh=true" : "/api/dashboard/data"
     ),
+  refreshDashboard: () => request<{ ok: true; queuedTopics: number }>("/api/dashboard/refresh", { method: "POST" }),
   getDashboardLayout: () => request<{ layout: DashboardLayout }>("/api/dashboard/layout"),
   saveDashboardLayout: (layout: DashboardLayout) =>
     request<{ ok: true }>("/api/dashboard/layout", {
