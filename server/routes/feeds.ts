@@ -17,7 +17,6 @@ const updateFeedSchema = z.object({
   name: z.string().min(2).max(120).optional(),
   url: z.string().min(3).max(500).optional(),
   type: z.enum(["custom_rss", "google_query"]).optional(),
-  active: z.boolean().optional(),
 });
 
 function normalizeFeedUrl(raw: string, type: "custom_rss" | "google_query"): string {

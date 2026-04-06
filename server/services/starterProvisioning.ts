@@ -48,6 +48,14 @@ export async function ensureStarterCatalog(): Promise<void> {
   const createdBy = adminUser?.id ?? null;
   const backfillTopicIds: string[] = [];
 
+  await db
+    .update(feeds)
+    .set({
+      active: true,
+      updatedAt: new Date(),
+    })
+    .where(eq(feeds.active, false));
+
   for (const preset of FREE_FINANCE_FEED_PRESETS) {
     const normalizedUrl = normalizeFeedInput(preset.url, preset.type);
     const existing = await db.query.feeds.findFirst({ where: eq(feeds.url, normalizedUrl) });

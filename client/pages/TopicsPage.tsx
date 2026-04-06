@@ -23,7 +23,6 @@ export default function TopicsPage({ isAdmin }: { isAdmin: boolean }) {
   const [includeTerms, setIncludeTerms] = useState("");
   const [excludeTerms, setExcludeTerms] = useState("");
   const [exactPhrases, setExactPhrases] = useState("");
-  const [selectedFeedIds, setSelectedFeedIds] = useState<string[]>([]);
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
   async function load() {
@@ -59,14 +58,13 @@ export default function TopicsPage({ isAdmin }: { isAdmin: boolean }) {
           excludeTerms: toList(excludeTerms),
           exactPhrases: toList(exactPhrases),
         },
-        feedIds: selectedFeedIds.length > 0 ? selectedFeedIds : feeds.filter((feed) => feed.active).map((feed) => feed.id),
+        feedIds: feeds.filter((feed) => feed.active).map((feed) => feed.id),
       });
 
       setName("");
       setIncludeTerms("");
       setExcludeTerms("");
       setExactPhrases("");
-      setSelectedFeedIds([]);
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create topic");
@@ -80,13 +78,6 @@ export default function TopicsPage({ isAdmin }: { isAdmin: boolean }) {
   async function removeTopic(topicId: string) {
     await api.deleteTopic(topicId);
     await load();
-  }
-
-  function toggleFeed(feedId: string, checked: boolean) {
-    setSelectedFeedIds((prev) => {
-      if (checked) return [...prev, feedId];
-      return prev.filter((id) => id !== feedId);
-    });
   }
 
   return (
@@ -154,23 +145,6 @@ export default function TopicsPage({ isAdmin }: { isAdmin: boolean }) {
               Exact phrases (comma separated)
               <input value={exactPhrases} onChange={(event) => setExactPhrases(event.target.value)} />
             </label>
-
-            <fieldset className="feed-box">
-              <legend>Choose sources manually (optional)</legend>
-              <p>If none selected, all active sources are used automatically.</p>
-              {feeds.map((feed) => (
-                <label key={feed.id} className="checkbox-row">
-                  <input
-                    type="checkbox"
-                    checked={selectedFeedIds.includes(feed.id)}
-                    onChange={(event) => toggleFeed(feed.id, event.target.checked)}
-                  />
-                  <span>
-                    {feed.name} ({feed.type})
-                  </span>
-                </label>
-              ))}
-            </fieldset>
           </>
         ) : null}
 

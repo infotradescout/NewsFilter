@@ -1,14 +1,5 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
-import {
-  articles,
-  feeds,
-  jobRuns,
-  summaries,
-  topicFeeds,
-  topicMatches,
-  topics,
-  watchTopics,
-} from "../../../shared/schema";
+import { articles, feeds, jobRuns, summaries, topicMatches, topics, watchTopics } from "../../../shared/schema";
 import { db } from "../../db";
 import { newId } from "../../utils/id";
 import { withAdvisoryLock } from "../advisoryLocks";
@@ -110,20 +101,9 @@ async function loadTopic(topicId: string): Promise<TopicSyncInput | null> {
     return null;
   }
 
-  const attachedFeeds = await db
-    .select({
-      feedId: topicFeeds.feedId,
-    })
-    .from(topicFeeds)
-    .where(eq(topicFeeds.topicId, topic.id));
-
-  const feedIds = attachedFeeds.map((row) => row.feedId);
-  const feedRecords = feedIds.length
-    ? await db.query.feeds.findMany({ where: inArray(feeds.id, feedIds) })
-    : [];
+  const feedRecords = await db.query.feeds.findMany({ where: eq(feeds.active, true) });
 
   const activeFeeds = feedRecords
-    .filter((feed) => feed.active)
     .map((feed) => ({
       name: feed.name,
       url: feed.url,

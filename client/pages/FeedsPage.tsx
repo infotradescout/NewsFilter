@@ -202,7 +202,7 @@ export default function FeedsPage() {
               <th>Name</th>
               <th>Type</th>
               <th>URL</th>
-              <th>Status</th>
+              <th>Availability</th>
             </tr>
           </thead>
           <tbody>
@@ -215,7 +215,7 @@ export default function FeedsPage() {
                     {feed.url}
                   </a>
                 </td>
-                <td>{feed.active ? "Active" : "Paused"}</td>
+                <td>Always on</td>
               </tr>
             ))}
           </tbody>
