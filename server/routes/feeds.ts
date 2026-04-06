@@ -9,18 +9,21 @@ import { newId } from "../utils/id";
 
 const createFeedSchema = z.object({
   name: z.string().min(2).max(120),
-  url: z.string().url(),
+  url: z.string().min(3).max(500),
   type: z.enum(["custom_rss", "google_query"]).default("custom_rss"),
 });
 
 const updateFeedSchema = z.object({
   name: z.string().min(2).max(120).optional(),
-  url: z.string().url().optional(),
+  url: z.string().min(3).max(500).optional(),
   type: z.enum(["custom_rss", "google_query"]).optional(),
   active: z.boolean().optional(),
 });
 
-function normalizeFeedUrl(raw: string): string {
+function normalizeFeedUrl(raw: string, type: "custom_rss" | "google_query"): string {
+  if (type === "google_query") {
+    return raw.trim();
+  }
   const parsed = new URL(raw.trim());
   return parsed.toString().replace(/\/$/, "");
 }
@@ -45,7 +48,16 @@ export function registerFeedRoutes(app: Express): void {
       return;
     }
 
-    const normalizedUrl = normalizeFeedUrl(parsed.data.url);
+    if (parsed.data.type === "custom_rss") {
+      try {
+        new URL(parsed.data.url);
+      } catch {
+        res.status(400).json({ error: "Custom RSS feeds need a valid URL" });
+        return;
+      }
+    }
+
+    const normalizedUrl = normalizeFeedUrl(parsed.data.url, parsed.data.type);
     const existing = await db.query.feeds.findFirst({ where: eq(feeds.url, normalizedUrl) });
     if (existing) {
       res.status(200).json({ feed: existing, existing: true });
@@ -73,21 +85,31 @@ export function registerFeedRoutes(app: Express): void {
       res.status(400).json({ error: "Invalid feed update payload" });
       return;
     }
+    const existing = await db.query.feeds.findFirst({ where: eq(feeds.id, feedId) });
+    if (!existing) {
+      res.status(404).json({ error: "Feed not found" });
+      return;
+    }
+
+    const nextType = parsed.data.type ?? existing.type;
+    if (parsed.data.url && nextType === "custom_rss") {
+      try {
+        new URL(parsed.data.url);
+      } catch {
+        res.status(400).json({ error: "Custom RSS feeds need a valid URL" });
+        return;
+      }
+    }
 
     const [updated] = await db
       .update(feeds)
       .set({
         ...parsed.data,
-        url: parsed.data.url ? normalizeFeedUrl(parsed.data.url) : undefined,
+        url: parsed.data.url ? normalizeFeedUrl(parsed.data.url, nextType) : undefined,
         updatedAt: new Date(),
       })
       .where(eq(feeds.id, feedId))
       .returning();
-
-    if (!updated) {
-      res.status(404).json({ error: "Feed not found" });
-      return;
-    }
 
     res.json({ feed: updated });
   });

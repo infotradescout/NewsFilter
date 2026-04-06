@@ -2,7 +2,6 @@ import { FormEvent, useEffect, useState } from "react";
 import type { Feed, FinanceCategory, Topic, TopicWindow } from "../api";
 import { api } from "../api";
 import { categoryHelp, categoryLabel } from "../labels";
-import { STARTER_TOPIC_PRESETS } from "../../shared/starterPack";
 
 function toList(value: string): string[] {
   return value
@@ -16,9 +15,6 @@ export default function TopicsPage({ isAdmin }: { isAdmin: boolean }) {
   const [feeds, setFeeds] = useState<Feed[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [starterStatus, setStarterStatus] = useState<string | null>(null);
-  const [creatingStarter, setCreatingStarter] = useState(false);
-  const [starterScope, setStarterScope] = useState<"personal" | "shared">(isAdmin ? "shared" : "personal");
 
   const [name, setName] = useState("");
   const [category, setCategory] = useState<FinanceCategory>("macro");
@@ -47,12 +43,6 @@ export default function TopicsPage({ isAdmin }: { isAdmin: boolean }) {
   useEffect(() => {
     void load();
   }, []);
-
-  useEffect(() => {
-    if (!isAdmin) {
-      setStarterScope("personal");
-    }
-  }, [isAdmin]);
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -99,54 +89,6 @@ export default function TopicsPage({ isAdmin }: { isAdmin: boolean }) {
     });
   }
 
-  async function createStarterTopics() {
-    if (feeds.length === 0) {
-      setError("Add feeds first, then create starter topics.");
-      return;
-    }
-
-    setCreatingStarter(true);
-    setError(null);
-    setStarterStatus(null);
-
-    try {
-      const existingNames = new Set(topics.map((topic) => topic.name.toLowerCase()));
-      const feedIds = feeds.filter((feed) => feed.active).map((feed) => feed.id);
-
-      let createdCount = 0;
-      let skippedCount = 0;
-      for (const preset of STARTER_TOPIC_PRESETS) {
-        if (existingNames.has(preset.name.toLowerCase())) {
-          skippedCount += 1;
-          continue;
-        }
-
-        await api.createTopic({
-          name: preset.name,
-          description: preset.description,
-          queryText: preset.queryText,
-          category: preset.category,
-          scope: starterScope,
-          window: preset.window,
-          rules: {
-            includeTerms: preset.includeTerms,
-            excludeTerms: preset.excludeTerms,
-            exactPhrases: preset.exactPhrases,
-          },
-          feedIds,
-        });
-        createdCount += 1;
-      }
-
-      setStarterStatus(`Created ${createdCount} starter topics. ${skippedCount} already existed.`);
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create starter topics");
-    } finally {
-      setCreatingStarter(false);
-    }
-  }
-
   return (
     <section className="page-stack">
       <header className="page-header-row">
@@ -180,7 +122,7 @@ export default function TopicsPage({ isAdmin }: { isAdmin: boolean }) {
             Who can see this topic?
             <select value={scope} onChange={(event) => setScope(event.target.value as "personal" | "shared")}> 
               <option value="personal">Only me</option>
-              <option value="shared">My team</option>
+              {isAdmin ? <option value="shared">My team</option> : null}
             </select>
           </label>
           <label>
@@ -235,26 +177,6 @@ export default function TopicsPage({ isAdmin }: { isAdmin: boolean }) {
         {error ? <p className="error">{error}</p> : null}
         <button type="submit">Create topic</button>
       </form>
-
-      <section className="panel stack">
-        <h3 className="section-title">Quick setup: starter finance topics</h3>
-        <p className="muted">Creates beginner presets so you can start getting summaries right away.</p>
-        {isAdmin ? (
-          <label>
-            Create as
-            <select value={starterScope} onChange={(event) => setStarterScope(event.target.value as "personal" | "shared")}>
-              <option value="shared">Shared</option>
-              <option value="personal">Personal</option>
-            </select>
-          </label>
-        ) : null}
-        <div className="summary-actions">
-          <button type="button" onClick={() => void createStarterTopics()} disabled={creatingStarter || loading}>
-            {creatingStarter ? "Creating..." : "Create starter topics"}
-          </button>
-        </div>
-        {starterStatus ? <p className="success">{starterStatus}</p> : null}
-      </section>
 
       <div className="card-grid">
         {topics.map((topic) => (

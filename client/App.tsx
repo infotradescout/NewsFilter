@@ -7,7 +7,6 @@ import DashboardPage from "./pages/DashboardPage";
 import FeedsPage from "./pages/FeedsPage";
 import InboxPage from "./pages/InboxPage";
 import LoginPage from "./pages/LoginPage";
-import StartPage from "./pages/StartPage";
 import TopicsPage from "./pages/TopicsPage";
 import WatchTopicsPage from "./pages/WatchTopicsPage";
 
@@ -36,7 +35,6 @@ function Shell({ user, onLogout }: { user: SessionUser; onLogout: () => Promise<
 
   const sectionTitleByPath: Record<string, string> = {
     "/dashboard": "Dashboard",
-    "/start": "Quick Setup",
     "/inbox": "Updates",
     "/topics": "Topics",
     "/feeds": "Sources",
@@ -70,7 +68,6 @@ function Shell({ user, onLogout }: { user: SessionUser; onLogout: () => Promise<
         </div>
         <nav className="main-nav">
           <NavLink to="/dashboard">Dashboard</NavLink>
-          <NavLink to="/start">Start</NavLink>
           <NavLink to="/inbox">Updates</NavLink>
           <NavLink to="/topics">Topics</NavLink>
           <NavLink to="/feeds">Sources</NavLink>
@@ -101,7 +98,6 @@ function Shell({ user, onLogout }: { user: SessionUser; onLogout: () => Promise<
         </header>
         <Routes>
           <Route path="/dashboard" element={<DashboardPage onOpenTab={openTab} />} />
-          <Route path="/start" element={<StartPage user={user} />} />
           <Route path="/inbox" element={<InboxPage />} />
           <Route path="/topics" element={<TopicsPage isAdmin={user.role === "admin"} />} />
           <Route path="/feeds" element={<FeedsPage />} />

@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { users } from "../shared/schema";
 import { db, pool } from "./db";
 import { env } from "./env";
+import { ensureStarterCatalog } from "./services/starterProvisioning";
 import { newId } from "./utils/id";
 
 export async function ensureSessionTable(): Promise<void> {
@@ -38,4 +39,5 @@ export async function ensureSeedAdmin(): Promise<void> {
 export async function runStartupBootstrap(): Promise<void> {
   await ensureSessionTable();
   await ensureSeedAdmin();
+  await ensureStarterCatalog();
 }

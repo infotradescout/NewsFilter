@@ -33,7 +33,7 @@ export default function LoginPage({ onLoggedIn }: LoginPageProps) {
         await api.register(email, password);
       }
       await onLoggedIn();
-      navigate("/start");
+      navigate("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Authentication failed");
     } finally {

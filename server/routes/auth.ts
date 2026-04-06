@@ -5,6 +5,7 @@ import { z } from "zod";
 import { invites, users } from "../../shared/schema";
 import { db } from "../db";
 import { env } from "../env";
+import { ensureUserDefaults } from "../services/starterProvisioning";
 import { sha256 } from "../utils/crypto";
 import { newId } from "../utils/id";
 
@@ -37,6 +38,7 @@ export function registerAuthRoutes(app: Express): void {
       res.json({ user: null });
       return;
     }
+    await ensureUserDefaults(user.id);
 
     res.json({
       user: {
@@ -73,6 +75,7 @@ export function registerAuthRoutes(app: Express): void {
       email: user.email,
       role: user.role,
     };
+    await ensureUserDefaults(user.id);
 
     res.json({
       user: {
@@ -113,6 +116,7 @@ export function registerAuthRoutes(app: Express): void {
       email: createdUser.email,
       role: createdUser.role,
     };
+    await ensureUserDefaults(createdUser.id);
 
     res.status(201).json({
       user: {
@@ -179,6 +183,7 @@ export function registerAuthRoutes(app: Express): void {
       email: invite.email.toLowerCase(),
       role: invite.role,
     };
+    await ensureUserDefaults(newUserId);
 
     res.status(201).json({
       user: {
