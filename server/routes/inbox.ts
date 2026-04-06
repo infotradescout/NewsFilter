@@ -4,6 +4,7 @@ import { z } from "zod";
 import { articles, inboxReads, summaries, topics, userWatchTopics, watchTopics } from "../../shared/schema";
 import { db } from "../db";
 import { requireAuth } from "../middleware/auth";
+import { runTopicSync } from "../services/news/syncTopic";
 
 const inboxQuerySchema = z.object({
   topicId: z.string().optional(),
@@ -16,6 +17,14 @@ const inboxQuerySchema = z.object({
 });
 
 export function registerInboxRoutes(app: Express): void {
+  async function getAccessibleTopics(user: { id: string; role: "admin" | "member" }) {
+    return user.role === "admin"
+      ? db.query.topics.findMany()
+      : db.query.topics.findMany({
+          where: or(eq(topics.scope, "shared"), and(eq(topics.scope, "personal"), eq(topics.ownerUserId, user.id))),
+        });
+  }
+
   app.get("/api/inbox", requireAuth, async (req, res) => {
     const user = req.session.user!;
     const parsedQuery = inboxQuerySchema.safeParse(req.query);
@@ -24,12 +33,7 @@ export function registerInboxRoutes(app: Express): void {
       return;
     }
 
-    const accessTopics =
-      user.role === "admin"
-        ? await db.query.topics.findMany()
-        : await db.query.topics.findMany({
-            where: or(eq(topics.scope, "shared"), and(eq(topics.scope, "personal"), eq(topics.ownerUserId, user.id))),
-          });
+    const accessTopics = await getAccessibleTopics(user);
 
     const accessTopicIds = accessTopics.map((topic) => topic.id);
 
@@ -110,6 +114,20 @@ export function registerInboxRoutes(app: Express): void {
     }
 
     res.json({ items });
+  });
+
+  app.post("/api/inbox/refresh", requireAuth, async (req, res) => {
+    const user = req.session.user!;
+    const accessTopics = await getAccessibleTopics(user);
+    const runnableTopicIds = accessTopics.filter((topic) => topic.active).map((topic) => topic.id);
+
+    for (const topicId of runnableTopicIds) {
+      void runTopicSync(topicId, "manual").catch((error) => {
+        console.error("[inbox] manual refresh failed", error);
+      });
+    }
+
+    res.status(202).json({ ok: true, queuedTopics: runnableTopicIds.length });
   });
 
   app.post("/api/inbox/:itemId/read", requireAuth, async (req, res) => {

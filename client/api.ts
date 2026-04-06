@@ -247,6 +247,7 @@ export const api = {
     const suffix = query.toString() ? `?${query.toString()}` : "";
     return request<{ items: InboxItem[] }>(`/api/inbox${suffix}`);
   },
+  refreshInbox: () => request<{ ok: true; queuedTopics: number }>("/api/inbox/refresh", { method: "POST" }),
   markRead: (itemId: string) => request<{ ok: true }>(`/api/inbox/${itemId}/read`, { method: "POST" }),
   listUsers: () => request<{ users: SessionUser[] }>("/api/admin/users"),
   listInvites: () => request<{ invites: Array<{ id: string; email: string; role: Role; expiresAt: string; acceptedAt: string | null }> }>(
