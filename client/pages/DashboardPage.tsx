@@ -39,6 +39,18 @@ function toneClass(tone?: "positive" | "negative" | "neutral"): string {
   return "";
 }
 
+function toneLabel(tone?: "positive" | "negative" | "neutral"): string {
+  if (tone === "positive") return "Bullish";
+  if (tone === "negative") return "Bearish";
+  return "Neutral";
+}
+
+function truncateText(text: string | undefined, maxLength = 90): string {
+  if (!text) return "";
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
 function defaultWidgets(
   topics: DashboardTopicCard[],
   watchTopics: DashboardWatchCard[],
@@ -88,6 +100,7 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [newSymbol, setNewSymbol] = useState("");
   const [message, setMessage] = useState<string | null>(null);
@@ -188,6 +201,21 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
   }, [priceSymbols.join(",")]);
 
   const visibleWidgets = layout.widgets.filter((widget) => !widget.hidden);
+  const activeQuoteValues = Object.values(quotes).filter((quote) => quote.changePct !== null && quote.changePct !== undefined);
+  const gainers = activeQuoteValues.filter((quote) => (quote.changePct ?? 0) > 0).length;
+  const losers = activeQuoteValues.filter((quote) => (quote.changePct ?? 0) < 0).length;
+  const avgMove =
+    activeQuoteValues.length > 0
+      ? activeQuoteValues.reduce((sum, quote) => sum + (quote.changePct ?? 0), 0) / activeQuoteValues.length
+      : null;
+  const signals = visibleWidgets
+    .filter((widget) => widget.type === "topic" || widget.type === "watch")
+    .map((widget) => {
+      if (widget.type === "topic") return topicMap.get(widget.refId)?.last?.tone;
+      return watchMap.get(widget.refId)?.last?.tone;
+    });
+  const bullishSignals = signals.filter((tone) => tone === "positive").length;
+  const bearishSignals = signals.filter((tone) => tone === "negative").length;
 
   function toggleExpand(id: string) {
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -332,9 +360,12 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
       <header className="page-header-row">
         <div>
           <h2>Dashboard</h2>
-          <p>Drag cards, resize them, and expand only what you need.</p>
+          <p>Fast market signals. Minimal text. Decision-ready cards.</p>
         </div>
         <div className="summary-actions">
+          <button className="secondary" onClick={() => setToolsOpen((prev) => !prev)}>
+            {toolsOpen ? "Hide tools" : "Show tools"}
+          </button>
           <button className={editMode ? "" : "secondary"} onClick={() => setEditMode((prev) => !prev)}>
             {editMode ? "Done" : "Edit layout"}
           </button>
@@ -350,218 +381,248 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
       {message ? <p className="success">{message}</p> : null}
       {error ? <p className="error">{error}</p> : null}
 
-      {editMode ? (
-        <section className="panel stack">
-          <h3>Add cards</h3>
-          <div className="dashboard-add-grid">
-            <div className="stack">
-              <strong>Topics</strong>
-              {missingTopicCards.slice(0, 12).map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className="secondary"
-                  onClick={() =>
-                    addWidget({
-                      id: widgetKey("topic", item.id),
-                      type: "topic",
-                      refId: item.id,
-                      size: "m",
-                    })
-                  }
-                >
-                  + {item.name}
+      <section className="pulse-grid">
+        <article className="pulse-card">
+          <span className="tiny-meta">Gainers / Losers</span>
+          <strong>
+            <span className="price-up">{gainers}</span> / <span className="price-down">{losers}</span>
+          </strong>
+        </article>
+        <article className="pulse-card">
+          <span className="tiny-meta">Avg move</span>
+          <strong className={avgMove === null ? "" : avgMove >= 0 ? "price-up" : "price-down"}>
+            {avgMove === null ? "--" : `${avgMove >= 0 ? "+" : ""}${avgMove.toFixed(2)}%`}
+          </strong>
+        </article>
+        <article className="pulse-card">
+          <span className="tiny-meta">Signal mix</span>
+          <strong>
+            <span className="price-up">{bullishSignals} bullish</span> ·{" "}
+            <span className="price-down">{bearishSignals} bearish</span>
+          </strong>
+        </article>
+        <article className="pulse-card">
+          <span className="tiny-meta">Cards</span>
+          <strong>{visibleWidgets.length} active</strong>
+        </article>
+      </section>
+
+      {toolsOpen || editMode ? (
+        <>
+          {editMode ? (
+            <section className="panel stack">
+              <h3>Add cards</h3>
+              <div className="dashboard-add-grid">
+                <div className="stack">
+                  <strong>Topics</strong>
+                  {missingTopicCards.slice(0, 12).map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className="secondary"
+                      onClick={() =>
+                        addWidget({
+                          id: widgetKey("topic", item.id),
+                          type: "topic",
+                          refId: item.id,
+                          size: "m",
+                        })
+                      }
+                    >
+                      + {item.name}
+                    </button>
+                  ))}
+                  {missingTopicCards.length === 0 ? (
+                    <p className="tiny-meta">All followed topics are already on your dashboard.</p>
+                  ) : null}
+                </div>
+                <div className="stack">
+                  <strong>Always-on</strong>
+                  {missingWatchCards.slice(0, 8).map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className="secondary"
+                      onClick={() =>
+                        addWidget({
+                          id: widgetKey("watch", item.id),
+                          type: "watch",
+                          refId: item.id,
+                          size: "s",
+                        })
+                      }
+                    >
+                      + {item.name}
+                    </button>
+                  ))}
+                  {missingWatchCards.length === 0 ? (
+                    <p className="tiny-meta">All followed always-on items are shown.</p>
+                  ) : null}
+                </div>
+                <div className="stack">
+                  <strong>Price card</strong>
+                  <label>
+                    Symbol
+                    <input
+                      value={newSymbol}
+                      onChange={(event) => setNewSymbol(event.target.value)}
+                      placeholder="GC=F, CL=F, HG=F..."
+                    />
+                  </label>
+                  <button type="button" onClick={addPriceCard}>
+                    + Add price card
+                  </button>
+                  <p className="tiny-meta">Try: CL=F, NG=F, GC=F, SI=F, HG=F, ZC=F, ZW=F, ZS=F</p>
+                </div>
+              </div>
+              <div className="summary-actions">
+                {DASHBOARD_TEMPLATES.map((template) => (
+                  <button key={template.key} type="button" className="secondary" onClick={() => applyTemplate(template.key)}>
+                    {template.label}
+                  </button>
+                ))}
+                <button className="secondary" onClick={() => onOpenTab?.("topics")}>
+                  Open Topics
                 </button>
-              ))}
-              {missingTopicCards.length === 0 ? (
-                <p className="tiny-meta">All followed topics are already on your dashboard.</p>
-              ) : null}
-            </div>
-            <div className="stack">
-              <strong>Always-on</strong>
-              {missingWatchCards.slice(0, 8).map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className="secondary"
-                  onClick={() =>
-                    addWidget({
-                      id: widgetKey("watch", item.id),
-                      type: "watch",
-                      refId: item.id,
-                      size: "s",
-                    })
-                  }
-                >
-                  + {item.name}
+                <button className="secondary" onClick={() => onOpenTab?.("feeds")}>
+                  Open Sources
                 </button>
-              ))}
-              {missingWatchCards.length === 0 ? (
-                <p className="tiny-meta">All followed always-on items are shown.</p>
-              ) : null}
+                <button className="secondary" onClick={() => onOpenTab?.("watch")}>
+                  Open Always On
+                </button>
+              </div>
+            </section>
+          ) : null}
+
+          <section className="panel stack">
+            <h3>Watchlist Heatmap</h3>
+            <div className="starter-chip-row">
+              {portfolio.map((position) => {
+                const quote = quotes[position.symbol];
+                const pct = quote?.changePct ?? null;
+                const cls = pct === null ? "price-flat" : pct > 0 ? "price-up" : pct < 0 ? "price-down" : "price-flat";
+                return (
+                  <span key={position.id} className={`starter-chip ${cls}`}>
+                    {position.symbol} {pct === null ? "--" : `${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%`}
+                  </span>
+                );
+              })}
+              {portfolio.length === 0 ? <span className="tiny-meta">No positions added yet.</span> : null}
             </div>
-            <div className="stack">
-              <strong>Price card</strong>
+          </section>
+
+          <section className="dashboard-add-grid">
+            <article className="panel stack">
+              <h3>Portfolio</h3>
               <label>
                 Symbol
                 <input
-                  value={newSymbol}
-                  onChange={(event) => setNewSymbol(event.target.value)}
-                  placeholder="GC=F, CL=F, HG=F..."
+                  value={newPosition.symbol}
+                  onChange={(event) => setNewPosition((prev) => ({ ...prev, symbol: event.target.value }))}
+                  placeholder="CL=F, XOM, GLD"
                 />
               </label>
-              <button type="button" onClick={addPriceCard}>
-                + Add price card
+              <label>
+                Quantity
+                <input
+                  type="number"
+                  value={newPosition.quantity}
+                  onChange={(event) => setNewPosition((prev) => ({ ...prev, quantity: Number(event.target.value || 0) }))}
+                />
+              </label>
+              <label>
+                Avg cost (optional)
+                <input
+                  type="number"
+                  value={newPosition.avgCost}
+                  onChange={(event) => setNewPosition((prev) => ({ ...prev, avgCost: event.target.value }))}
+                />
+              </label>
+              <button type="button" onClick={() => void addPortfolioPosition()}>
+                Add position
               </button>
-              <p className="tiny-meta">Try: CL=F, NG=F, GC=F, SI=F, HG=F, ZC=F, ZW=F, ZS=F</p>
-            </div>
-          </div>
-          <div className="summary-actions">
-            {DASHBOARD_TEMPLATES.map((template) => (
-              <button key={template.key} type="button" className="secondary" onClick={() => applyTemplate(template.key)}>
-                {template.label}
-              </button>
-            ))}
-            <button className="secondary" onClick={() => onOpenTab?.("topics")}>
-              Open Topics
-            </button>
-            <button className="secondary" onClick={() => onOpenTab?.("feeds")}>
-              Open Sources
-            </button>
-            <button className="secondary" onClick={() => onOpenTab?.("watch")}>
-              Open Always On
-            </button>
-          </div>
-        </section>
-      ) : null}
-
-      <section className="panel stack">
-        <h3>Watchlist Heatmap</h3>
-        <div className="starter-chip-row">
-          {portfolio.map((position) => {
-            const quote = quotes[position.symbol];
-            const pct = quote?.changePct ?? null;
-            const cls = pct === null ? "price-flat" : pct > 0 ? "price-up" : pct < 0 ? "price-down" : "price-flat";
-            return (
-              <span key={position.id} className={`starter-chip ${cls}`}>
-                {position.symbol} {pct === null ? "--" : `${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%`}
-              </span>
-            );
-          })}
-          {portfolio.length === 0 ? <span className="tiny-meta">No positions added yet.</span> : null}
-        </div>
-      </section>
-
-      <section className="dashboard-add-grid">
-        <article className="panel stack">
-          <h3>Portfolio</h3>
-          <label>
-            Symbol
-            <input
-              value={newPosition.symbol}
-              onChange={(event) => setNewPosition((prev) => ({ ...prev, symbol: event.target.value }))}
-              placeholder="CL=F, XOM, GLD"
-            />
-          </label>
-          <label>
-            Quantity
-            <input
-              type="number"
-              value={newPosition.quantity}
-              onChange={(event) => setNewPosition((prev) => ({ ...prev, quantity: Number(event.target.value || 0) }))}
-            />
-          </label>
-          <label>
-            Avg cost (optional)
-            <input
-              type="number"
-              value={newPosition.avgCost}
-              onChange={(event) => setNewPosition((prev) => ({ ...prev, avgCost: event.target.value }))}
-            />
-          </label>
-          <button type="button" onClick={() => void addPortfolioPosition()}>
-            Add position
-          </button>
-          {portfolio.slice(0, 8).map((position) => (
-            <div key={position.id} className="summary-actions">
-              <span className="tiny-meta">
-                {position.symbol} · qty {position.quantity}
-              </span>
-              <button className="secondary" type="button" onClick={() => void removePortfolioPosition(position.id)}>
-                Remove
-              </button>
-            </div>
-          ))}
-        </article>
-
-        <article className="panel stack">
-          <h3>Alerts</h3>
-          <label>
-            Name
-            <input
-              value={newAlert.name}
-              onChange={(event) => setNewAlert((prev) => ({ ...prev, name: event.target.value }))}
-              placeholder="Oil move alert"
-            />
-          </label>
-          <label>
-            Symbol (optional)
-            <input
-              value={newAlert.symbol}
-              onChange={(event) => setNewAlert((prev) => ({ ...prev, symbol: event.target.value }))}
-              placeholder="CL=F"
-            />
-          </label>
-          <label>
-            Min % move (optional)
-            <input
-              type="number"
-              value={newAlert.minAbsChangePct}
-              onChange={(event) => setNewAlert((prev) => ({ ...prev, minAbsChangePct: event.target.value }))}
-              placeholder="1.5"
-            />
-          </label>
-          <button type="button" onClick={() => void createAlertRule()}>
-            Create alert
-          </button>
-          {triggeredAlerts.slice(0, 5).map((item) => (
-            <div key={item.id} className="stack">
-              <strong>{item.name}</strong>
-              {item.reasons.map((reason) => (
-                <span key={reason} className="tiny-meta">
-                  {reason}
-                </span>
+              {portfolio.slice(0, 8).map((position) => (
+                <div key={position.id} className="summary-actions">
+                  <span className="tiny-meta">
+                    {position.symbol} · qty {position.quantity}
+                  </span>
+                  <button className="secondary" type="button" onClick={() => void removePortfolioPosition(position.id)}>
+                    Remove
+                  </button>
+                </div>
               ))}
-            </div>
-          ))}
-          {alertRules.slice(0, 6).map((rule) => (
-            <div key={rule.id} className="summary-actions">
-              <span className="tiny-meta">{rule.name}</span>
-              <button className="secondary" type="button" onClick={() => void removeAlertRule(rule.id)}>
-                Delete
-              </button>
-            </div>
-          ))}
-        </article>
+            </article>
 
-        <article className="panel stack">
-          <h3>Calendar</h3>
-          {calendarEvents.slice(0, 6).map((event) => (
-            <div key={event.id} className="stack">
-              <strong>{event.title}</strong>
-              <span className="tiny-meta">{new Date(event.when).toLocaleString()}</span>
-              <span className="tiny-meta">{event.note}</span>
-            </div>
-          ))}
-          <label>
-            Blocked domains (comma separated)
-            <input value={blockedDomainInput} onChange={(event) => setBlockedDomainInput(event.target.value)} />
-          </label>
-          <button type="button" onClick={() => void savePreferences()}>
-            Save source controls
-          </button>
-        </article>
-      </section>
+            <article className="panel stack">
+              <h3>Alerts</h3>
+              <label>
+                Name
+                <input
+                  value={newAlert.name}
+                  onChange={(event) => setNewAlert((prev) => ({ ...prev, name: event.target.value }))}
+                  placeholder="Oil move alert"
+                />
+              </label>
+              <label>
+                Symbol (optional)
+                <input
+                  value={newAlert.symbol}
+                  onChange={(event) => setNewAlert((prev) => ({ ...prev, symbol: event.target.value }))}
+                  placeholder="CL=F"
+                />
+              </label>
+              <label>
+                Min % move (optional)
+                <input
+                  type="number"
+                  value={newAlert.minAbsChangePct}
+                  onChange={(event) => setNewAlert((prev) => ({ ...prev, minAbsChangePct: event.target.value }))}
+                  placeholder="1.5"
+                />
+              </label>
+              <button type="button" onClick={() => void createAlertRule()}>
+                Create alert
+              </button>
+              {triggeredAlerts.slice(0, 5).map((item) => (
+                <div key={item.id} className="stack">
+                  <strong>{item.name}</strong>
+                  {item.reasons.map((reason) => (
+                    <span key={reason} className="tiny-meta">
+                      {reason}
+                    </span>
+                  ))}
+                </div>
+              ))}
+              {alertRules.slice(0, 6).map((rule) => (
+                <div key={rule.id} className="summary-actions">
+                  <span className="tiny-meta">{rule.name}</span>
+                  <button className="secondary" type="button" onClick={() => void removeAlertRule(rule.id)}>
+                    Delete
+                  </button>
+                </div>
+              ))}
+            </article>
+
+            <article className="panel stack">
+              <h3>Calendar</h3>
+              {calendarEvents.slice(0, 6).map((event) => (
+                <div key={event.id} className="stack">
+                  <strong>{event.title}</strong>
+                  <span className="tiny-meta">{new Date(event.when).toLocaleString()}</span>
+                  <span className="tiny-meta">{event.note}</span>
+                </div>
+              ))}
+              <label>
+                Blocked domains (comma separated)
+                <input value={blockedDomainInput} onChange={(event) => setBlockedDomainInput(event.target.value)} />
+              </label>
+              <button type="button" onClick={() => void savePreferences()}>
+                Save source controls
+              </button>
+            </article>
+          </section>
+        </>
+      ) : null}
 
       <div className="dashboard-grid">
         {visibleWidgets.map((widget) => {
@@ -605,14 +666,15 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
                 <div className="summary-meta">
                   <span>{categoryLabel(item.category)}</span>
                   <span>{item.window}</span>
+                  <span className={`signal-chip tone-${item.last?.tone ?? "neutral"}`}>{toneLabel(item.last?.tone)}</span>
                 </div>
-                <p className="dash-headline">{item.last?.headline ?? "No summary yet"}</p>
+                <p className="dash-headline">{truncateText(item.last?.headline, 86) || "No summary yet"}</p>
                 {expandedNow ? (
                   <div className="stack">
-                    <p className="tiny-meta">{item.last?.bullet || "Run refresh for latest signal."}</p>
+                    <p className="tiny-meta">{truncateText(item.last?.bullet, 130) || "Run refresh for latest signal."}</p>
                     {item.last?.why ? (
                       <p className="tiny-meta">
-                        Impact: {item.last.why.impactClass} · Score:{" "}
+                        Why: {item.last.why.impactClass} · Score{" "}
                         {item.last.why.score !== null ? item.last.why.score.toFixed(2) : "--"}
                         {item.last.why.trust !== null ? ` · Trust: ${item.last.why.trust.toFixed(2)}` : ""}
                       </p>
@@ -661,14 +723,15 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
                 <div className="summary-meta">
                   <span>{categoryLabel(item.category)}</span>
                   <span>Always on</span>
+                  <span className={`signal-chip tone-${item.last?.tone ?? "neutral"}`}>{toneLabel(item.last?.tone)}</span>
                 </div>
-                <p className="dash-headline">{item.last?.headline ?? "No summary yet"}</p>
+                <p className="dash-headline">{truncateText(item.last?.headline, 86) || "No summary yet"}</p>
                 {expandedNow ? (
                   <div className="stack">
-                    <p className="tiny-meta">{item.last?.bullet || item.queryText}</p>
+                    <p className="tiny-meta">{truncateText(item.last?.bullet || item.queryText, 130)}</p>
                     {item.last?.why ? (
                       <p className="tiny-meta">
-                        Impact: {item.last.why.impactClass} · Score:{" "}
+                        Why: {item.last.why.impactClass} · Score{" "}
                         {item.last.why.score !== null ? item.last.why.score.toFixed(2) : "--"}
                         {item.last.why.trust !== null ? ` · Trust: ${item.last.why.trust.toFixed(2)}` : ""}
                       </p>

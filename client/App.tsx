@@ -14,6 +14,14 @@ import WatchTopicsPage from "./pages/WatchTopicsPage";
 function Shell({ user, onLogout }: { user: SessionUser; onLogout: () => Promise<void> }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [viewMode, setViewMode] = useState<"modern" | "pro">(() => {
+    const stored = typeof window !== "undefined" ? window.localStorage.getItem("nf_view_mode") : null;
+    return stored === "pro" ? "pro" : "modern";
+  });
+  const [densityMode, setDensityMode] = useState<"comfortable" | "compact">(() => {
+    const stored = typeof window !== "undefined" ? window.localStorage.getItem("nf_density_mode") : null;
+    return stored === "compact" ? "compact" : "comfortable";
+  });
 
   async function handleLogout() {
     await onLogout();
@@ -37,8 +45,16 @@ function Shell({ user, onLogout }: { user: SessionUser; onLogout: () => Promise<
   };
   const sectionTitle = sectionTitleByPath[location.pathname] ?? "NewsFilter";
 
+  useEffect(() => {
+    window.localStorage.setItem("nf_view_mode", viewMode);
+  }, [viewMode]);
+
+  useEffect(() => {
+    window.localStorage.setItem("nf_density_mode", densityMode);
+  }, [densityMode]);
+
   return (
-    <div className="app-shell">
+    <div className={`app-shell app-theme-${viewMode} density-${densityMode}`}>
       <aside className="side-nav">
         <div className="side-nav-top">
           <div className="brand">
@@ -65,7 +81,23 @@ function Shell({ user, onLogout }: { user: SessionUser; onLogout: () => Promise<
       <main className="content-area">
         <header className="topbar">
           <h2>{sectionTitle}</h2>
-          <div className="user-chip">{user.email}</div>
+          <div className="topbar-actions">
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => setViewMode((prev) => (prev === "modern" ? "pro" : "modern"))}
+            >
+              {viewMode === "modern" ? "Pro View" : "Modern View"}
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => setDensityMode((prev) => (prev === "comfortable" ? "compact" : "comfortable"))}
+            >
+              {densityMode === "comfortable" ? "Compact" : "Comfort"}
+            </button>
+            <div className="user-chip">{user.email}</div>
+          </div>
         </header>
         <Routes>
           <Route path="/dashboard" element={<DashboardPage onOpenTab={openTab} />} />
