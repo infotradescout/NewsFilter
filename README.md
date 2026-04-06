@@ -54,7 +54,7 @@ On first startup, admin account is created automatically if missing.
 ## Deploy on Render
 1. Push this project to a GitHub repo/branch.
 2. In Render, create a new Blueprint and point it at that repo (Render reads `render.yaml`).
-3. After first deploy, set `APP_BASE_URL` to your live Render URL (`https://<your-service>.onrender.com`) and redeploy.
+3. `APP_BASE_URL` is auto-derived from Render's `RENDER_EXTERNAL_URL`; only set it manually if you use a custom domain.
 4. Log in with your seeded admin account, then create invites from **Admin**.
 
 ## API surfaces

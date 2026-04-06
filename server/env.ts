@@ -18,4 +18,9 @@ const envSchema = z.object({
   HOURLY_SYNC_CRON: z.string().default("10 * * * *"),
 });
 
-export const env = envSchema.parse(process.env);
+const parsedEnv = envSchema.parse({
+  ...process.env,
+  APP_BASE_URL: process.env.APP_BASE_URL ?? process.env.RENDER_EXTERNAL_URL ?? "http://localhost:5173",
+});
+
+export const env = parsedEnv;
