@@ -9,13 +9,13 @@ async function main() {
   const app = createApp();
 
   app.listen(env.PORT, () => {
-    console.log(`[newsfilter] api listening on :${env.PORT}`);
+    console.log(`[marketfilter] api listening on :${env.PORT}`);
   });
 
   startScheduler();
 }
 
 main().catch((error) => {
-  console.error("[newsfilter] startup failed", error);
+  console.error("[marketfilter] startup failed", error);
   process.exit(1);
 });

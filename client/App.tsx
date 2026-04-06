@@ -43,7 +43,7 @@ function Shell({ user, onLogout }: { user: SessionUser; onLogout: () => Promise<
     "/watch-topics": "Always On",
     "/admin": "Team",
   };
-  const sectionTitle = sectionTitleByPath[location.pathname] ?? "NewsFilter";
+  const sectionTitle = sectionTitleByPath[location.pathname] ?? "MarketFilter";
 
   useEffect(() => {
     window.localStorage.setItem("nf_view_mode", viewMode);
@@ -60,7 +60,7 @@ function Shell({ user, onLogout }: { user: SessionUser; onLogout: () => Promise<
           <div className="brand">
             <span className="brand-mark" />
             <div>
-              <h1>NewsFilter</h1>
+              <h1>MarketFilter</h1>
               <p>Market Tracking</p>
             </div>
           </div>
@@ -138,7 +138,7 @@ export default function App() {
   }, []);
 
   if (loading) {
-    return <main className="centered-page">Loading NewsFilter...</main>;
+    return <main className="centered-page">Loading MarketFilter...</main>;
   }
 
   return (
@@ -155,3 +155,4 @@ export default function App() {
     </Routes>
   );
 }
+

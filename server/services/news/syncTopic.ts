@@ -411,7 +411,7 @@ export async function runTopicSync(topicId: string, trigger: "scheduler" | "back
 }
 
 export async function runHourlyTopicSync(): Promise<void> {
-  const run = await withAdvisoryLock("job:newsfilter-hourly", async () => {
+  const run = await withAdvisoryLock("job:marketfilter-hourly", async () => {
     const activeTopics = await db
       .select({ id: topics.id })
       .from(topics)
@@ -442,3 +442,4 @@ export async function latestJobRuns(limit = 20) {
     limit,
   });
 }
+

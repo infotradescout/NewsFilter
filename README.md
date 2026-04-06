@@ -1,6 +1,6 @@
-# NewsFilter
+# MarketFilter
 
-Finance-first NewsFilter for macro, commodities, equities, and crypto intelligence.
+Finance-first MarketFilter for macro, commodities, equities, and crypto intelligence.
 
 ## Stack
 - React + Vite client
@@ -58,7 +58,7 @@ On first startup, admin account is created automatically if missing.
 ## Deploy on Render
 Use this one-click Blueprint link:
 
-`https://render.com/deploy?repo=https://github.com/infotradescout/NewsFilter`
+`https://render.com/deploy?repo=https://github.com/infotradescout/MarketFilter`
 
 1. Push this project to a GitHub repo/branch.
 2. In Render, create a new Blueprint and point it at that repo (Render reads `render.yaml`).
@@ -76,3 +76,4 @@ Use this one-click Blueprint link:
 - Portfolio: `GET/POST/PATCH/DELETE /api/portfolio`
 - Alerts: `GET/POST/PATCH/DELETE /api/alerts`, `GET /api/alerts/triggered`
 - Calendar/preferences: `GET /api/calendar/upcoming`, `GET/PUT /api/preferences`
+

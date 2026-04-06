@@ -147,7 +147,7 @@ export default function StartPage({ user }: StartPageProps) {
       <header className="page-header-row">
         <div>
           <h2>Start Here</h2>
-          <p>Set up NewsFilter in under two minutes.</p>
+          <p>Set up MarketFilter in under two minutes.</p>
         </div>
         <button onClick={() => void load()} disabled={busy}>
           Refresh status
@@ -199,3 +199,4 @@ export default function StartPage({ user }: StartPageProps) {
     </section>
   );
 }
+

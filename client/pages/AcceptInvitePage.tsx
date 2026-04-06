@@ -34,7 +34,7 @@ export default function AcceptInvitePage({ onAccepted }: AcceptInvitePageProps) 
     <main className="centered-page">
       <div className="auth-card">
         <h1>Accept Invite</h1>
-        <p>Create your NewsFilter password to activate your account.</p>
+        <p>Create your MarketFilter password to activate your account.</p>
         <form onSubmit={handleSubmit} className="stack">
           <label>
             Invite token

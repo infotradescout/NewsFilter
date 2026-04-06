@@ -38,7 +38,7 @@ export function createApp() {
   app.get("/api/health", (_req, res) => {
     res.json({
       ok: true,
-      app: "newsfilter",
+      app: "marketfilter",
       now: new Date().toISOString(),
     });
   });
@@ -66,3 +66,4 @@ export function createApp() {
 
   return app;
 }
+

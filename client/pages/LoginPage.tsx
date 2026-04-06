@@ -44,7 +44,7 @@ export default function LoginPage({ onLoggedIn }: LoginPageProps) {
   return (
     <main className="centered-page">
       <div className="auth-card">
-        <h1>NewsFilter</h1>
+        <h1>MarketFilter</h1>
         <p>Fast market signals with minimal reading.</p>
 
         <form onSubmit={handleSubmit} className="stack">
@@ -105,3 +105,4 @@ export default function LoginPage({ onLoggedIn }: LoginPageProps) {
     </main>
   );
 }
+

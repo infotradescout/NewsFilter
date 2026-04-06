@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: newsfilter
+    name: marketfilter
     env: node
     plan: free
     buildCommand: npm ci --include=dev && npm run build
@@ -28,3 +28,4 @@ services:
         sync: false
       - key: DATABASE_URL
         sync: false
+
