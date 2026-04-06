@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "moduleResolution": "Bundler",
+    "module": "ESNext",
+    "types": ["node", "vitest/globals"],
+    "noEmit": true
+  },
+  "include": ["server", "shared", "drizzle.config.ts", "tests", "vitest.config.ts"]
+}
