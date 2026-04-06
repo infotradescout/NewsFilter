@@ -2,7 +2,7 @@ services:
   - type: web
     name: newsfilter
     env: node
-    plan: starter
+    plan: free
     buildCommand: npm ci --include=dev && npm run build
     startCommand: npm run start:render
     healthCheckPath: /api/health
@@ -33,4 +33,4 @@ services:
 
 databases:
   - name: newsfilter-db
-    plan: basic-256mb
+    plan: free
