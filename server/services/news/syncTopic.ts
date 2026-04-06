@@ -122,7 +122,13 @@ async function loadTopic(topicId: string): Promise<TopicSyncInput | null> {
     ? await db.query.feeds.findMany({ where: inArray(feeds.id, feedIds) })
     : [];
 
-  const feedUrls = feedRecords.filter((feed) => feed.active).map((feed) => feed.url);
+  const activeFeeds = feedRecords
+    .filter((feed) => feed.active)
+    .map((feed) => ({
+      name: feed.name,
+      url: feed.url,
+      type: feed.type,
+    }));
 
   return {
     topicId: topic.id,
@@ -134,7 +140,7 @@ async function loadTopic(topicId: string): Promise<TopicSyncInput | null> {
       excludeTerms: topic.excludeTerms,
       exactPhrases: topic.exactPhrases,
     }),
-    feedUrls,
+    feeds: activeFeeds,
     queryText: topic.queryText,
   };
 }
@@ -242,7 +248,12 @@ export async function runTopicSync(topicId: string, trigger: "scheduler" | "back
     const query = buildGoogleNewsQuery(topic.topicName, topic.rules, topic.queryText);
     const googleArticles = await fetchGoogleNewsArticles(query);
     const customLists = await Promise.all(
-      topic.feedUrls.map((url) => fetchRssFeed(url, "custom_rss", "Custom Feed"))
+      topic.feeds.map((feed) => {
+        if (feed.type === "google_query") {
+          return fetchGoogleNewsArticles(feed.url);
+        }
+        return fetchRssFeed(feed.url, "custom_rss", feed.name);
+      })
     );
 
     const fetched = [...googleArticles, ...customLists.flat()];

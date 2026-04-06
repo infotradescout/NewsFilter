@@ -20,6 +20,7 @@ export interface FeedPreset {
   key: string;
   name: string;
   url: string;
+  type: "custom_rss" | "google_query";
   category: "macro" | "commodities" | "equities" | "crypto" | "general";
   description: string;
 }

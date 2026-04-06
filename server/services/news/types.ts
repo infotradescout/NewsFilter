@@ -43,12 +43,16 @@ export interface VettingResult {
 }
 
 export interface TopicSyncInput {
+  feeds: Array<{
+    name: string;
+    url: string;
+    type: "custom_rss" | "google_query";
+  }>;
   topicId: string;
   topicName: string;
   category: FinanceCategory;
   window: TopicWindow;
   rules: TopicRules;
-  feedUrls: string[];
   queryText?: string | null;
 }
 

@@ -96,7 +96,7 @@ export default function FeedsPage() {
         const response = await api.createFeed({
           name: preset.name,
           url: preset.url,
-          type: "custom_rss",
+          type: preset.type,
         });
         if (response.existing) {
           existingCount += 1;

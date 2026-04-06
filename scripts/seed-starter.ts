@@ -7,7 +7,7 @@ import { FREE_FINANCE_FEED_PRESETS, STARTER_TOPIC_PRESETS } from "../shared/star
 import { newId } from "../server/utils/id";
 import { runTopicSync } from "../server/services/news/syncTopic";
 
-type SeedFeed = { name: string; url: string };
+type SeedFeed = { name: string; url: string; type: "custom_rss" | "google_query" };
 type SeedTopic = {
   name: string;
   category: "macro" | "commodities" | "equities" | "crypto";
@@ -28,6 +28,7 @@ type SeedWatch = {
 const starterFeeds: SeedFeed[] = FREE_FINANCE_FEED_PRESETS.map((feed) => ({
   name: feed.name,
   url: feed.url,
+  type: feed.type,
 }));
 
 const starterTopics: SeedTopic[] = STARTER_TOPIC_PRESETS.map((topic) => ({
@@ -63,7 +64,7 @@ async function upsertFeeds(adminId: string) {
         id: newId(),
         name: feed.name,
         url: feed.url,
-        type: "custom_rss",
+        type: feed.type,
         active: true,
         createdByUserId: adminId,
       })

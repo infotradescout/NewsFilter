@@ -60,7 +60,7 @@ export default function StartPage({ user }: StartPageProps) {
         const response = await api.createFeed({
           name: preset.name,
           url: preset.url,
-          type: "custom_rss",
+          type: preset.type,
         });
         if (response.existing) existing += 1;
         else created += 1;
