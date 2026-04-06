@@ -11,6 +11,7 @@ import { registerFeedRoutes } from "./routes/feeds";
 import { registerWatchTopicRoutes } from "./routes/watchTopics";
 import { registerInboxRoutes } from "./routes/inbox";
 import { registerJobsRoutes } from "./routes/jobs";
+import { registerDashboardRoutes } from "./routes/dashboard";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -45,6 +46,7 @@ export function createApp() {
   registerWatchTopicRoutes(app);
   registerInboxRoutes(app);
   registerJobsRoutes(app);
+  registerDashboardRoutes(app);
 
   if (env.NODE_ENV === "production") {
     const clientDist = path.resolve(process.cwd(), "dist/client");

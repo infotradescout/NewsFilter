@@ -82,6 +82,62 @@ export interface JobRun {
   errorMessage: string | null;
 }
 
+export type DashboardWidgetType = "topic" | "watch" | "price";
+export type DashboardWidgetSize = "s" | "m" | "l";
+
+export interface DashboardWidgetLayout {
+  id: string;
+  type: DashboardWidgetType;
+  refId: string;
+  size: DashboardWidgetSize;
+  hidden?: boolean;
+  symbol?: string;
+  label?: string;
+}
+
+export interface DashboardLayout {
+  widgets: DashboardWidgetLayout[];
+}
+
+export interface DashboardTopicCard {
+  id: string;
+  name: string;
+  category: FinanceCategory;
+  window: TopicWindow;
+  scope: "personal" | "shared";
+  last: {
+    headline: string;
+    bullet: string;
+    publishedAt: string;
+    sourceLink: string;
+    sourceDomain: string;
+  } | null;
+}
+
+export interface DashboardWatchCard {
+  id: string;
+  name: string;
+  category: FinanceCategory;
+  queryText: string;
+  last: {
+    headline: string;
+    bullet: string;
+    publishedAt: string;
+    sourceLink: string;
+    sourceDomain: string;
+  } | null;
+}
+
+export interface MarketQuote {
+  symbol: string;
+  name: string;
+  price: number | null;
+  change: number | null;
+  changePct: number | null;
+  asOf: string | null;
+  currency: string;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     credentials: "include",
@@ -156,4 +212,16 @@ export const api = {
       body: JSON.stringify(payload),
     }),
   listJobs: () => request<{ jobRuns: JobRun[] }>("/api/jobs/latest"),
+  getDashboardData: () =>
+    request<{ topics: DashboardTopicCard[]; watchTopics: DashboardWatchCard[]; defaultPriceSymbols: string[] }>(
+      "/api/dashboard/data"
+    ),
+  getDashboardLayout: () => request<{ layout: DashboardLayout }>("/api/dashboard/layout"),
+  saveDashboardLayout: (layout: DashboardLayout) =>
+    request<{ ok: true }>("/api/dashboard/layout", {
+      method: "PUT",
+      body: JSON.stringify({ layout }),
+    }),
+  getMarketQuotes: (symbols: string[]) =>
+    request<{ quotes: MarketQuote[] }>(`/api/market/prices?symbols=${encodeURIComponent(symbols.join(","))}`),
 };

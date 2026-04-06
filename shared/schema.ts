@@ -42,6 +42,10 @@ export const users = pgTable(
     email: text("email").notNull(),
     passwordHash: text("password_hash").notNull(),
     role: roleEnum("role").notNull().default("member"),
+    dashboardLayout: jsonb("dashboard_layout")
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [uniqueIndex("users_email_idx").on(table.email)]

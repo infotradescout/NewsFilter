@@ -3,6 +3,7 @@ import { NavLink, Navigate, Route, Routes, useNavigate } from "react-router-dom"
 import { api, SessionUser } from "./api";
 import AcceptInvitePage from "./pages/AcceptInvitePage";
 import AdminPage from "./pages/AdminPage";
+import DashboardPage from "./pages/DashboardPage";
 import FeedsPage from "./pages/FeedsPage";
 import InboxPage from "./pages/InboxPage";
 import LoginPage from "./pages/LoginPage";
@@ -18,6 +19,12 @@ function Shell({ user, onLogout }: { user: SessionUser; onLogout: () => Promise<
     navigate("/login");
   }
 
+  function openTab(tab: "topics" | "feeds" | "watch") {
+    if (tab === "topics") navigate("/topics");
+    if (tab === "feeds") navigate("/feeds");
+    if (tab === "watch") navigate("/watch-topics");
+  }
+
   return (
     <div className="app-shell">
       <aside className="side-nav">
@@ -31,6 +38,7 @@ function Shell({ user, onLogout }: { user: SessionUser; onLogout: () => Promise<
           </button>
         </div>
         <nav className="main-nav">
+          <NavLink to="/dashboard">Dashboard</NavLink>
           <NavLink to="/start">Start</NavLink>
           <NavLink to="/inbox">Updates</NavLink>
           <NavLink to="/topics">Topics</NavLink>
@@ -41,13 +49,14 @@ function Shell({ user, onLogout }: { user: SessionUser; onLogout: () => Promise<
       </aside>
       <main className="content-area">
         <Routes>
+          <Route path="/dashboard" element={<DashboardPage onOpenTab={openTab} />} />
           <Route path="/start" element={<StartPage user={user} />} />
           <Route path="/inbox" element={<InboxPage />} />
           <Route path="/topics" element={<TopicsPage isAdmin={user.role === "admin"} />} />
           <Route path="/feeds" element={<FeedsPage />} />
           <Route path="/watch-topics" element={<WatchTopicsPage isAdmin={user.role === "admin"} />} />
           {user.role === "admin" ? <Route path="/admin" element={<AdminPage />} /> : null}
-          <Route path="*" element={<Navigate to="/start" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </main>
     </div>
@@ -86,7 +95,7 @@ export default function App() {
       <Route path="/accept-invite" element={<AcceptInvitePage onAccepted={refreshSession} />} />
       <Route
         path="/login"
-        element={user ? <Navigate to="/start" replace /> : <LoginPage onLoggedIn={refreshSession} />}
+        element={user ? <Navigate to="/dashboard" replace /> : <LoginPage onLoggedIn={refreshSession} />}
       />
       <Route
         path="/*"
