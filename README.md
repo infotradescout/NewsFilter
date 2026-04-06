@@ -52,6 +52,10 @@ On first startup, admin account is created automatically if missing.
 - `npm run db:push` - Push Drizzle schema to Postgres
 
 ## Deploy on Render
+Use this one-click Blueprint link:
+
+`https://render.com/deploy?repo=https://github.com/infotradescout/tradescoutAI/tree/newsfilter-v1`
+
 1. Push this project to a GitHub repo/branch.
 2. In Render, create a new Blueprint and point it at that repo (Render reads `render.yaml`).
 3. `APP_BASE_URL` is auto-derived from Render's `RENDER_EXTERNAL_URL`; only set it manually if you use a custom domain.
