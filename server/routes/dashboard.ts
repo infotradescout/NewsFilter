@@ -1,7 +1,17 @@
 import type { Express } from "express";
 import { and, desc, eq, or } from "drizzle-orm";
 import { z } from "zod";
-import { summaries, topics, userWatchTopics, users, watchTopics } from "../../shared/schema";
+import {
+  alertRules,
+  portfolioPositions,
+  summaries,
+  topicMatches,
+  topics,
+  userPreferences,
+  userWatchTopics,
+  users,
+  watchTopics,
+} from "../../shared/schema";
 import { db } from "../db";
 import { requireAuth } from "../middleware/auth";
 
@@ -25,6 +35,10 @@ const saveLayoutSchema = z.object({
 
 const DEFAULT_PRICE_SYMBOLS = ["CL=F", "NG=F", "GC=F", "HG=F"];
 type Tone = "positive" | "negative" | "neutral";
+const DASHBOARD_CACHE_MS = 30_000;
+const QUOTE_CACHE_MS = 20_000;
+const dashboardCache = new Map<string, { expiresAt: number; payload: unknown }>();
+const quoteCache = new Map<string, { expiresAt: number; quotes: unknown[] }>();
 
 const POSITIVE_TERMS = [
   "beat",
@@ -92,9 +106,79 @@ async function latestSummaryForTopic(topicId: string) {
   });
 }
 
+async function getCachedQuotes(symbols: string[]) {
+  const normalized = [...new Set(symbols.map((s) => s.trim().toUpperCase()).filter(Boolean))].sort();
+  if (normalized.length === 0) return [];
+
+  const key = normalized.join(",");
+  const now = Date.now();
+  const cached = quoteCache.get(key);
+  if (cached && cached.expiresAt > now) {
+    return cached.quotes;
+  }
+
+  const quoteUrl = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(key)}`;
+  const response = await fetch(quoteUrl, {
+    headers: {
+      "User-Agent": "NewsFilter/1.0",
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`Price API HTTP ${response.status}`);
+  }
+
+  const payload = (await response.json()) as {
+    quoteResponse?: {
+      result?: Array<{
+        symbol?: string;
+        shortName?: string;
+        regularMarketPrice?: number;
+        regularMarketChange?: number;
+        regularMarketChangePercent?: number;
+        regularMarketTime?: number;
+        currency?: string;
+      }>;
+    };
+  };
+
+  const result = payload.quoteResponse?.result ?? [];
+  const bySymbol = new Map(result.map((item) => [item.symbol, item]));
+
+  const quotes = normalized
+    .map((symbol) => bySymbol.get(symbol))
+    .filter((item): item is NonNullable<typeof item> => Boolean(item))
+    .map((item) => ({
+      symbol: item.symbol ?? "",
+      name: item.shortName ?? item.symbol ?? "",
+      price: item.regularMarketPrice ?? null,
+      change: item.regularMarketChange ?? null,
+      changePct: item.regularMarketChangePercent ?? null,
+      asOf: item.regularMarketTime ? new Date(item.regularMarketTime * 1000).toISOString() : null,
+      currency: item.currency ?? "USD",
+    }));
+
+  quoteCache.set(key, {
+    expiresAt: now + QUOTE_CACHE_MS,
+    quotes,
+  });
+
+  return quotes;
+}
+
 export function registerDashboardRoutes(app: Express): void {
   app.get("/api/dashboard/data", requireAuth, async (req, res) => {
     const user = req.session.user!;
+    const cacheKey = user.id;
+    const now = Date.now();
+    const cached = dashboardCache.get(cacheKey);
+    if (cached && cached.expiresAt > now) {
+      res.json(cached.payload);
+      return;
+    }
+
+    const prefs = await db.query.userPreferences.findFirst({ where: eq(userPreferences.userId, user.id) });
+    const blockedDomainSet = new Set((prefs?.blockedDomains ?? []).map((d) => d.toLowerCase().replace(/^www\./, "")));
+    const trustOverrides = prefs?.trustOverrides ?? {};
 
     const topicRows =
       user.role === "admin"
@@ -123,6 +207,29 @@ export function registerDashboardRoutes(app: Express): void {
     const topicCards = await Promise.all(
       topicRows.map(async (topic) => {
         const latest = await latestSummaryForTopic(topic.id);
+        if (latest && blockedDomainSet.has(parseDomain(latest.sourceLink))) {
+          return {
+            id: topic.id,
+            name: topic.name,
+            category: topic.category,
+            window: topic.window,
+            scope: topic.scope,
+            last: null,
+          };
+        }
+        const latestMatch =
+          latest
+            ? await db.query.topicMatches.findFirst({
+                where: and(
+                  eq(topicMatches.topicId, topic.id),
+                  eq(topicMatches.articleId, latest.articleId),
+                  eq(topicMatches.window, latest.window)
+                ),
+              })
+            : null;
+
+        const domain = latest ? parseDomain(latest.sourceLink) : "";
+        const trust = domain ? trustOverrides[domain] ?? null : null;
         return {
           id: topic.id,
           name: topic.name,
@@ -137,6 +244,11 @@ export function registerDashboardRoutes(app: Express): void {
                 sourceLink: latest.sourceLink,
                 sourceDomain: parseDomain(latest.sourceLink),
                 tone: classifyTone(`${latest.headline} ${latest.bullets[0] ?? ""}`),
+                why: {
+                  impactClass: latestMatch?.impactClass ?? "general",
+                  score: latestMatch?.vettingScore ?? null,
+                  trust,
+                },
               }
             : null,
         };
@@ -148,6 +260,27 @@ export function registerDashboardRoutes(app: Express): void {
         .filter((item) => followedWatchIds.has(item.id))
         .map(async (item) => {
           const latest = item.linkedTopicId ? await latestSummaryForTopic(item.linkedTopicId) : null;
+          if (latest && blockedDomainSet.has(parseDomain(latest.sourceLink))) {
+            return {
+              id: item.id,
+              name: item.name,
+              category: item.category,
+              queryText: item.queryText,
+              last: null,
+            };
+          }
+          const latestMatch =
+            latest && item.linkedTopicId
+              ? await db.query.topicMatches.findFirst({
+                  where: and(
+                    eq(topicMatches.topicId, item.linkedTopicId),
+                    eq(topicMatches.articleId, latest.articleId),
+                    eq(topicMatches.window, latest.window)
+                  ),
+                })
+              : null;
+          const domain = latest ? parseDomain(latest.sourceLink) : "";
+          const trust = domain ? trustOverrides[domain] ?? null : null;
           return {
             id: item.id,
             name: item.name,
@@ -161,17 +294,42 @@ export function registerDashboardRoutes(app: Express): void {
                   sourceLink: latest.sourceLink,
                   sourceDomain: parseDomain(latest.sourceLink),
                   tone: classifyTone(`${latest.headline} ${latest.bullets[0] ?? ""}`),
+                  why: {
+                    impactClass: latestMatch?.impactClass ?? "general",
+                    score: latestMatch?.vettingScore ?? null,
+                    trust,
+                  },
                 }
               : null,
           };
         })
     );
 
-    res.json({
+    const positions = await db.query.portfolioPositions.findMany({
+      where: and(eq(portfolioPositions.userId, user.id), eq(portfolioPositions.active, true)),
+      orderBy: [desc(portfolioPositions.updatedAt)],
+      limit: 80,
+    });
+
+    const alertRuleRows = await db.query.alertRules.findMany({
+      where: and(eq(alertRules.userId, user.id), eq(alertRules.enabled, true)),
+      orderBy: [desc(alertRules.updatedAt)],
+      limit: 50,
+    });
+
+    const payload = {
       topics: topicCards,
       watchTopics: watchCards,
       defaultPriceSymbols: DEFAULT_PRICE_SYMBOLS,
+      portfolio: positions,
+      alertRules: alertRuleRows,
+    };
+    dashboardCache.set(cacheKey, {
+      expiresAt: now + DASHBOARD_CACHE_MS,
+      payload,
     });
+
+    res.json(payload);
   });
 
   app.get("/api/dashboard/layout", requireAuth, async (req, res) => {
@@ -195,6 +353,7 @@ export function registerDashboardRoutes(app: Express): void {
         dashboardLayout: parsed.data.layout,
       })
       .where(eq(users.id, req.session.user!.id));
+    dashboardCache.delete(req.session.user!.id);
 
     res.json({ ok: true });
   });
@@ -212,49 +371,7 @@ export function registerDashboardRoutes(app: Express): void {
     }
 
     try {
-      const quoteUrl = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(
-        symbolsRaw.join(",")
-      )}`;
-
-      const response = await fetch(quoteUrl, {
-        headers: {
-          "User-Agent": "NewsFilter/1.0",
-        },
-      });
-      if (!response.ok) {
-        throw new Error(`Price API HTTP ${response.status}`);
-      }
-
-      const payload = (await response.json()) as {
-        quoteResponse?: {
-          result?: Array<{
-            symbol?: string;
-            shortName?: string;
-            regularMarketPrice?: number;
-            regularMarketChange?: number;
-            regularMarketChangePercent?: number;
-            regularMarketTime?: number;
-            currency?: string;
-          }>;
-        };
-      };
-
-      const result = payload.quoteResponse?.result ?? [];
-      const bySymbol = new Map(result.map((item) => [item.symbol, item]));
-
-      const quotes = symbolsRaw
-        .map((symbol) => bySymbol.get(symbol))
-        .filter((item): item is NonNullable<typeof item> => Boolean(item))
-        .map((item) => ({
-          symbol: item.symbol ?? "",
-          name: item.shortName ?? item.symbol ?? "",
-          price: item.regularMarketPrice ?? null,
-          change: item.regularMarketChange ?? null,
-          changePct: item.regularMarketChangePercent ?? null,
-          asOf: item.regularMarketTime ? new Date(item.regularMarketTime * 1000).toISOString() : null,
-          currency: item.currency ?? "USD",
-        }));
-
+      const quotes = await getCachedQuotes(symbolsRaw);
       res.json({ quotes });
     } catch {
       res.json({ quotes: [] });

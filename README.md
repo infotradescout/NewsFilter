@@ -15,6 +15,8 @@ Finance-first NewsFilter for macro, commodities, equities, and crypto intelligen
 - Personal + shared topics with windows (`24h`, `7d`, `30d`)
 - One-click setup for recommended free finance sources
 - One-click starter topic pack (macro, commodities, equities, crypto)
+- Custom dashboard with draggable/resizable cards, templates, glow states, and live prices
+- Portfolio positions, alert rules, event calendar, watchlist heatmap, and source-trust controls
 - Google News RSS + custom RSS ingestion
 - Precision-first vetting (`market impact + keyword match + freshness + source trust`)
 - Top 15 vetted candidates/topic/run, summarize top 5
@@ -70,3 +72,7 @@ Use this one-click Blueprint link:
 - Watch topics: `GET/POST/PATCH/DELETE /api/watch-topics`
 - Feeds: `GET/POST/PATCH/DELETE /api/feeds`
 - Inbox/jobs: `GET /api/inbox`, `POST /api/inbox/:itemId/read`, `GET /api/jobs/latest`
+- Dashboard: `GET /api/dashboard/data`, `GET/PUT /api/dashboard/layout`, `GET /api/market/prices`
+- Portfolio: `GET/POST/PATCH/DELETE /api/portfolio`
+- Alerts: `GET/POST/PATCH/DELETE /api/alerts`, `GET /api/alerts/triggered`
+- Calendar/preferences: `GET /api/calendar/upcoming`, `GET/PUT /api/preferences`

@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  AlertRule,
   api,
+  CalendarEvent,
   DashboardLayout,
   DashboardTopicCard,
   DashboardWatchCard,
   DashboardWidgetLayout,
   DashboardWidgetSize,
   MarketQuote,
+  PortfolioPosition,
 } from "../api";
 import { categoryLabel } from "../labels";
 
@@ -15,6 +18,11 @@ interface DashboardPageProps {
 }
 
 const SIZE_ORDER: DashboardWidgetSize[] = ["s", "m", "l"];
+const DASHBOARD_TEMPLATES = [
+  { key: "commodities", label: "Commodities Trader" },
+  { key: "macro", label: "Macro Desk" },
+  { key: "crypto", label: "Crypto Desk" },
+] as const;
 
 function cycleSize(size: DashboardWidgetSize): DashboardWidgetSize {
   const idx = SIZE_ORDER.indexOf(size);
@@ -63,6 +71,17 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
   const [topics, setTopics] = useState<DashboardTopicCard[]>([]);
   const [watchTopics, setWatchTopics] = useState<DashboardWatchCard[]>([]);
   const [defaultPriceSymbols, setDefaultPriceSymbols] = useState<string[]>([]);
+  const [portfolio, setPortfolio] = useState<PortfolioPosition[]>([]);
+  const [alertRules, setAlertRules] = useState<AlertRule[]>([]);
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [triggeredAlerts, setTriggeredAlerts] = useState<Array<{ id: string; name: string; reasons: string[]; updatedAt: string }>>([]);
+  const [preferences, setPreferences] = useState<{ blockedDomains: string[]; trustOverrides: Record<string, number> }>({
+    blockedDomains: [],
+    trustOverrides: {},
+  });
+  const [blockedDomainInput, setBlockedDomainInput] = useState("");
+  const [newPosition, setNewPosition] = useState({ symbol: "", quantity: 0, avgCost: "" });
+  const [newAlert, setNewAlert] = useState({ name: "", symbol: "", minAbsChangePct: "" });
   const [layout, setLayout] = useState<DashboardLayout>({ widgets: [] });
   const [quotes, setQuotes] = useState<Record<string, MarketQuote>>({});
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -85,6 +104,8 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
       setTopics(dataRes.topics);
       setWatchTopics(dataRes.watchTopics);
       setDefaultPriceSymbols(dataRes.defaultPriceSymbols);
+      setPortfolio(dataRes.portfolio);
+      setAlertRules(dataRes.alertRules);
 
       const defaults = defaultWidgets(dataRes.topics, dataRes.watchTopics, dataRes.defaultPriceSymbols);
       const incoming = layoutRes.layout.widgets ?? [];
@@ -95,6 +116,15 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
       });
 
       setLayout({ widgets: validIncoming.length > 0 ? validIncoming : defaults });
+      const [calendarRes, alertsRes, prefRes] = await Promise.all([
+        api.listCalendarEvents(),
+        api.listTriggeredAlerts(),
+        api.getPreferences(),
+      ]);
+      setCalendarEvents(calendarRes.events);
+      setTriggeredAlerts(alertsRes.items);
+      setPreferences(prefRes.preferences);
+      setBlockedDomainInput(prefRes.preferences.blockedDomains.join(", "));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load dashboard");
     } finally {
@@ -121,10 +151,12 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
   }, []);
 
   const priceSymbols = useMemo(() => {
-    return layout.widgets
+    const fromWidgets = layout.widgets
       .filter((widget) => !widget.hidden && widget.type === "price")
       .map((widget) => widget.symbol || widget.refId);
-  }, [layout.widgets]);
+    const fromPortfolio = portfolio.filter((p) => p.active).map((p) => p.symbol);
+    return [...new Set([...fromWidgets, ...fromPortfolio])];
+  }, [layout.widgets, portfolio]);
 
   useEffect(() => {
     if (priceSymbols.length === 0) {
@@ -224,6 +256,73 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
     setNewSymbol("");
   }
 
+  async function addPortfolioPosition() {
+    if (!newPosition.symbol.trim()) return;
+    await api.createPortfolioPosition({
+      symbol: newPosition.symbol.trim().toUpperCase(),
+      quantity: Number(newPosition.quantity || 0),
+      avgCost: newPosition.avgCost ? Number(newPosition.avgCost) : null,
+    });
+    setNewPosition({ symbol: "", quantity: 0, avgCost: "" });
+    await load();
+  }
+
+  async function removePortfolioPosition(id: string) {
+    await api.deletePortfolioPosition(id);
+    await load();
+  }
+
+  async function createAlertRule() {
+    if (!newAlert.name.trim()) return;
+    await api.createAlertRule({
+      name: newAlert.name.trim(),
+      symbol: newAlert.symbol.trim() ? newAlert.symbol.trim().toUpperCase() : null,
+      minAbsChangePct: newAlert.minAbsChangePct ? Number(newAlert.minAbsChangePct) : null,
+    });
+    setNewAlert({ name: "", symbol: "", minAbsChangePct: "" });
+    await load();
+  }
+
+  async function removeAlertRule(id: string) {
+    await api.deleteAlertRule(id);
+    await load();
+  }
+
+  async function savePreferences() {
+    const blockedDomains = blockedDomainInput
+      .split(",")
+      .map((v) => v.trim().toLowerCase())
+      .filter(Boolean);
+    await api.savePreferences({ blockedDomains, trustOverrides: preferences.trustOverrides });
+    await load();
+  }
+
+  function applyTemplate(template: (typeof DASHBOARD_TEMPLATES)[number]["key"]) {
+    const topicCandidates = topics.filter((t) => {
+      if (template === "commodities") return t.category === "commodities";
+      if (template === "macro") return t.category === "macro";
+      if (template === "crypto") return t.category === "crypto";
+      return true;
+    });
+    const nextWidgets = [
+      ...defaultPriceSymbols.slice(0, 4).map((symbol) => ({
+        id: widgetKey("price", symbol),
+        type: "price" as const,
+        refId: symbol,
+        symbol,
+        label: symbol,
+        size: "s" as const,
+      })),
+      ...topicCandidates.slice(0, 8).map((item) => ({
+        id: widgetKey("topic", item.id),
+        type: "topic" as const,
+        refId: item.id,
+        size: "m" as const,
+      })),
+    ];
+    setLayout({ widgets: nextWidgets });
+  }
+
   if (loading) {
     return <section className="page-stack"><p>Loading dashboard...</p></section>;
   }
@@ -318,6 +417,11 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
             </div>
           </div>
           <div className="summary-actions">
+            {DASHBOARD_TEMPLATES.map((template) => (
+              <button key={template.key} type="button" className="secondary" onClick={() => applyTemplate(template.key)}>
+                {template.label}
+              </button>
+            ))}
             <button className="secondary" onClick={() => onOpenTab?.("topics")}>
               Open Topics
             </button>
@@ -330,6 +434,134 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
           </div>
         </section>
       ) : null}
+
+      <section className="panel stack">
+        <h3>Watchlist Heatmap</h3>
+        <div className="starter-chip-row">
+          {portfolio.map((position) => {
+            const quote = quotes[position.symbol];
+            const pct = quote?.changePct ?? null;
+            const cls = pct === null ? "price-flat" : pct > 0 ? "price-up" : pct < 0 ? "price-down" : "price-flat";
+            return (
+              <span key={position.id} className={`starter-chip ${cls}`}>
+                {position.symbol} {pct === null ? "--" : `${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%`}
+              </span>
+            );
+          })}
+          {portfolio.length === 0 ? <span className="tiny-meta">No positions added yet.</span> : null}
+        </div>
+      </section>
+
+      <section className="dashboard-add-grid">
+        <article className="panel stack">
+          <h3>Portfolio</h3>
+          <label>
+            Symbol
+            <input
+              value={newPosition.symbol}
+              onChange={(event) => setNewPosition((prev) => ({ ...prev, symbol: event.target.value }))}
+              placeholder="CL=F, XOM, GLD"
+            />
+          </label>
+          <label>
+            Quantity
+            <input
+              type="number"
+              value={newPosition.quantity}
+              onChange={(event) => setNewPosition((prev) => ({ ...prev, quantity: Number(event.target.value || 0) }))}
+            />
+          </label>
+          <label>
+            Avg cost (optional)
+            <input
+              type="number"
+              value={newPosition.avgCost}
+              onChange={(event) => setNewPosition((prev) => ({ ...prev, avgCost: event.target.value }))}
+            />
+          </label>
+          <button type="button" onClick={() => void addPortfolioPosition()}>
+            Add position
+          </button>
+          {portfolio.slice(0, 8).map((position) => (
+            <div key={position.id} className="summary-actions">
+              <span className="tiny-meta">
+                {position.symbol} · qty {position.quantity}
+              </span>
+              <button className="secondary" type="button" onClick={() => void removePortfolioPosition(position.id)}>
+                Remove
+              </button>
+            </div>
+          ))}
+        </article>
+
+        <article className="panel stack">
+          <h3>Alerts</h3>
+          <label>
+            Name
+            <input
+              value={newAlert.name}
+              onChange={(event) => setNewAlert((prev) => ({ ...prev, name: event.target.value }))}
+              placeholder="Oil move alert"
+            />
+          </label>
+          <label>
+            Symbol (optional)
+            <input
+              value={newAlert.symbol}
+              onChange={(event) => setNewAlert((prev) => ({ ...prev, symbol: event.target.value }))}
+              placeholder="CL=F"
+            />
+          </label>
+          <label>
+            Min % move (optional)
+            <input
+              type="number"
+              value={newAlert.minAbsChangePct}
+              onChange={(event) => setNewAlert((prev) => ({ ...prev, minAbsChangePct: event.target.value }))}
+              placeholder="1.5"
+            />
+          </label>
+          <button type="button" onClick={() => void createAlertRule()}>
+            Create alert
+          </button>
+          {triggeredAlerts.slice(0, 5).map((item) => (
+            <div key={item.id} className="stack">
+              <strong>{item.name}</strong>
+              {item.reasons.map((reason) => (
+                <span key={reason} className="tiny-meta">
+                  {reason}
+                </span>
+              ))}
+            </div>
+          ))}
+          {alertRules.slice(0, 6).map((rule) => (
+            <div key={rule.id} className="summary-actions">
+              <span className="tiny-meta">{rule.name}</span>
+              <button className="secondary" type="button" onClick={() => void removeAlertRule(rule.id)}>
+                Delete
+              </button>
+            </div>
+          ))}
+        </article>
+
+        <article className="panel stack">
+          <h3>Calendar</h3>
+          {calendarEvents.slice(0, 6).map((event) => (
+            <div key={event.id} className="stack">
+              <strong>{event.title}</strong>
+              <span className="tiny-meta">{new Date(event.when).toLocaleString()}</span>
+              <span className="tiny-meta">{event.note}</span>
+            </div>
+          ))}
+          <label>
+            Blocked domains (comma separated)
+            <input value={blockedDomainInput} onChange={(event) => setBlockedDomainInput(event.target.value)} />
+          </label>
+          <button type="button" onClick={() => void savePreferences()}>
+            Save source controls
+          </button>
+        </article>
+      </section>
 
       <div className="dashboard-grid">
         {visibleWidgets.map((widget) => {
@@ -375,7 +607,18 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
                   <span>{item.window}</span>
                 </div>
                 <p className="dash-headline">{item.last?.headline ?? "No summary yet"}</p>
-                {expandedNow ? <p className="tiny-meta">{item.last?.bullet || "Run refresh for latest signal."}</p> : null}
+                {expandedNow ? (
+                  <div className="stack">
+                    <p className="tiny-meta">{item.last?.bullet || "Run refresh for latest signal."}</p>
+                    {item.last?.why ? (
+                      <p className="tiny-meta">
+                        Impact: {item.last.why.impactClass} · Score:{" "}
+                        {item.last.why.score !== null ? item.last.why.score.toFixed(2) : "--"}
+                        {item.last.why.trust !== null ? ` · Trust: ${item.last.why.trust.toFixed(2)}` : ""}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
               </article>
             );
           }
@@ -420,7 +663,18 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
                   <span>Always on</span>
                 </div>
                 <p className="dash-headline">{item.last?.headline ?? "No summary yet"}</p>
-                {expandedNow ? <p className="tiny-meta">{item.last?.bullet || item.queryText}</p> : null}
+                {expandedNow ? (
+                  <div className="stack">
+                    <p className="tiny-meta">{item.last?.bullet || item.queryText}</p>
+                    {item.last?.why ? (
+                      <p className="tiny-meta">
+                        Impact: {item.last.why.impactClass} · Score:{" "}
+                        {item.last.why.score !== null ? item.last.why.score.toFixed(2) : "--"}
+                        {item.last.why.trust !== null ? ` · Trust: ${item.last.why.trust.toFixed(2)}` : ""}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
               </article>
             );
           }

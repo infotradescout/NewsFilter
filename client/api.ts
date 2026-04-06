@@ -112,6 +112,11 @@ export interface DashboardTopicCard {
     sourceLink: string;
     sourceDomain: string;
     tone: "positive" | "negative" | "neutral";
+    why: {
+      impactClass: string;
+      score: number | null;
+      trust: number | null;
+    };
   } | null;
 }
 
@@ -127,6 +132,11 @@ export interface DashboardWatchCard {
     sourceLink: string;
     sourceDomain: string;
     tone: "positive" | "negative" | "neutral";
+    why: {
+      impactClass: string;
+      score: number | null;
+      trust: number | null;
+    };
   } | null;
 }
 
@@ -138,6 +148,40 @@ export interface MarketQuote {
   changePct: number | null;
   asOf: string | null;
   currency: string;
+}
+
+export interface PortfolioPosition {
+  id: string;
+  userId: string;
+  symbol: string;
+  label: string | null;
+  quantity: number;
+  avgCost: number | null;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AlertRule {
+  id: string;
+  userId: string;
+  name: string;
+  enabled: boolean;
+  symbol: string | null;
+  minAbsChangePct: number | null;
+  topicId: string | null;
+  tone: "positive" | "negative" | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  category: FinanceCategory;
+  when: string;
+  importance: "high" | "medium";
+  note: string;
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -215,7 +259,13 @@ export const api = {
     }),
   listJobs: () => request<{ jobRuns: JobRun[] }>("/api/jobs/latest"),
   getDashboardData: () =>
-    request<{ topics: DashboardTopicCard[]; watchTopics: DashboardWatchCard[]; defaultPriceSymbols: string[] }>(
+    request<{
+      topics: DashboardTopicCard[];
+      watchTopics: DashboardWatchCard[];
+      defaultPriceSymbols: string[];
+      portfolio: PortfolioPosition[];
+      alertRules: AlertRule[];
+    }>(
       "/api/dashboard/data"
     ),
   getDashboardLayout: () => request<{ layout: DashboardLayout }>("/api/dashboard/layout"),
@@ -226,4 +276,24 @@ export const api = {
     }),
   getMarketQuotes: (symbols: string[]) =>
     request<{ quotes: MarketQuote[] }>(`/api/market/prices?symbols=${encodeURIComponent(symbols.join(","))}`),
+  listPortfolio: () => request<{ positions: PortfolioPosition[] }>("/api/portfolio"),
+  createPortfolioPosition: (payload: unknown) =>
+    request<{ position: PortfolioPosition }>("/api/portfolio", { method: "POST", body: JSON.stringify(payload) }),
+  updatePortfolioPosition: (id: string, payload: unknown) =>
+    request<{ position: PortfolioPosition }>(`/api/portfolio/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
+  deletePortfolioPosition: (id: string) => request<{ ok: true }>(`/api/portfolio/${id}`, { method: "DELETE" }),
+  listAlertRules: () => request<{ rules: AlertRule[] }>("/api/alerts"),
+  createAlertRule: (payload: unknown) =>
+    request<{ rule: AlertRule }>("/api/alerts", { method: "POST", body: JSON.stringify(payload) }),
+  updateAlertRule: (id: string, payload: unknown) =>
+    request<{ rule: AlertRule }>(`/api/alerts/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
+  deleteAlertRule: (id: string) => request<{ ok: true }>(`/api/alerts/${id}`, { method: "DELETE" }),
+  listTriggeredAlerts: () => request<{ items: Array<{ id: string; name: string; reasons: string[]; updatedAt: string }> }>(
+    "/api/alerts/triggered"
+  ),
+  listCalendarEvents: () => request<{ events: CalendarEvent[]; note: string }>("/api/calendar/upcoming"),
+  getPreferences: () =>
+    request<{ preferences: { blockedDomains: string[]; trustOverrides: Record<string, number> } }>("/api/preferences"),
+  savePreferences: (payload: { blockedDomains: string[]; trustOverrides: Record<string, number> }) =>
+    request<{ ok: true }>("/api/preferences", { method: "PUT", body: JSON.stringify(payload) }),
 };

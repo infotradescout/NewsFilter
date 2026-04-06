@@ -51,6 +51,32 @@ export const users = pgTable(
   (table) => [uniqueIndex("users_email_idx").on(table.email)]
 );
 
+export const userPreferences = pgTable("user_preferences", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  blockedDomains: jsonb("blocked_domains").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+  trustOverrides: jsonb("trust_overrides")
+    .$type<Record<string, number>>()
+    .notNull()
+    .default(sql`'{}'::jsonb`),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const portfolioPositions = pgTable("portfolio_positions", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  symbol: text("symbol").notNull(),
+  label: text("label"),
+  quantity: doublePrecision("quantity").notNull().default(0),
+  avgCost: doublePrecision("avg_cost"),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const invites = pgTable(
   "invites",
   {
@@ -127,6 +153,21 @@ export const topicFeeds = pgTable(
   },
   (table) => [primaryKey({ columns: [table.topicId, table.feedId] })]
 );
+
+export const alertRules = pgTable("alert_rules", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  enabled: boolean("enabled").notNull().default(true),
+  symbol: text("symbol"),
+  minAbsChangePct: doublePrecision("min_abs_change_pct"),
+  topicId: text("topic_id").references(() => topics.id, { onDelete: "cascade" }),
+  tone: text("tone"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 export const watchTopics = pgTable(
   "watch_topics",
