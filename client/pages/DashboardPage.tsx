@@ -11,7 +11,7 @@ import {
   MarketQuote,
   PortfolioPosition,
 } from "../api";
-import { categoryLabel } from "../labels";
+import { categoryLabel, impactLabel } from "../labels";
 
 interface DashboardPageProps {
   onOpenTab?: (tab: "topics" | "feeds" | "watch") => void;
@@ -769,7 +769,7 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
                     <p className="tiny-meta">{truncateText(item.last?.bullet, 130) || "Run refresh for latest signal."}</p>
                     {item.last?.why ? (
                       <p className="tiny-meta">
-                        Why: {item.last.why.impactClass} · Score{" "}
+                        Why: {impactLabel(item.last.why.impactClass)} · Score{" "}
                         {item.last.why.score !== null ? item.last.why.score.toFixed(2) : "--"}
                         {item.last.why.trust !== null ? ` · Trust: ${item.last.why.trust.toFixed(2)}` : ""}
                       </p>
@@ -826,7 +826,7 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
                     <p className="tiny-meta">{truncateText(item.last?.bullet || item.queryText, 130)}</p>
                     {item.last?.why ? (
                       <p className="tiny-meta">
-                        Why: {item.last.why.impactClass} · Score{" "}
+                        Why: {impactLabel(item.last.why.impactClass)} · Score{" "}
                         {item.last.why.score !== null ? item.last.why.score.toFixed(2) : "--"}
                         {item.last.why.trust !== null ? ` · Trust: ${item.last.why.trust.toFixed(2)}` : ""}
                       </p>
