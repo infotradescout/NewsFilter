@@ -75,6 +75,22 @@ function symbolHint(symbol: string): string | null {
   return SYMBOL_HELP[symbol.toUpperCase()]?.hint ?? null;
 }
 
+function confidenceLabel(score: number | null): string {
+  if (score === null) return "Unrated";
+  if (score >= 0.9) return "Very high confidence";
+  if (score >= 0.8) return "High confidence";
+  if (score >= 0.7) return "Medium confidence";
+  return "Low confidence";
+}
+
+function trustLabel(trust: number | null): string {
+  if (trust === null) return "Source trust: default";
+  if (trust >= 0.85) return "Source trust: strong";
+  if (trust >= 0.7) return "Source trust: good";
+  if (trust >= 0.55) return "Source trust: mixed";
+  return "Source trust: weak";
+}
+
 function defaultWidgets(
   topics: DashboardTopicCard[],
   watchTopics: DashboardWatchCard[],
@@ -126,6 +142,7 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
   const [refreshing, setRefreshing] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [newSymbol, setNewSymbol] = useState("");
   const [message, setMessage] = useState<string | null>(null);
@@ -440,6 +457,9 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
           <p>Live markets first, then ranked signals. Built for fast decisions.</p>
         </div>
         <div className="summary-actions">
+          <button className="secondary" onClick={() => setGuideOpen((prev) => !prev)}>
+            {guideOpen ? "Hide guide" : "What this means"}
+          </button>
           <button className="secondary" onClick={() => setToolsOpen((prev) => !prev)}>
             {toolsOpen ? "Hide tools" : "Show tools"}
           </button>
@@ -457,6 +477,21 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
 
       {message ? <p className="success">{message}</p> : null}
       {error ? <p className="error">{error}</p> : null}
+
+      {guideOpen ? (
+        <section className="panel stack">
+          <h3 className="section-title">How to read this screen</h3>
+          <p className="muted">
+            Green means price/signal is improving. Red means it is weakening. Use confidence + source trust together before acting.
+          </p>
+          <div className="meta-line">
+            <span className="meta-pill">Pulse row = market snapshot</span>
+            <span className="meta-pill">Price cards = live market levels</span>
+            <span className="meta-pill">Theme cards = ranked news signals</span>
+            <span className="meta-pill">Always-on cards = persistent risk monitors</span>
+          </div>
+        </section>
+      ) : null}
 
       <section className="pulse-grid">
         <article className="pulse-card">
@@ -769,9 +804,8 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
                     <p className="tiny-meta">{truncateText(item.last?.bullet, 130) || "Run refresh for latest signal."}</p>
                     {item.last?.why ? (
                       <p className="tiny-meta">
-                        Why: {impactLabel(item.last.why.impactClass)} · Score{" "}
-                        {item.last.why.score !== null ? item.last.why.score.toFixed(2) : "--"}
-                        {item.last.why.trust !== null ? ` · Trust: ${item.last.why.trust.toFixed(2)}` : ""}
+                        Why: {impactLabel(item.last.why.impactClass)} · {confidenceLabel(item.last.why.score)} ·{" "}
+                        {trustLabel(item.last.why.trust)}
                       </p>
                     ) : null}
                   </div>
@@ -826,9 +860,8 @@ export default function DashboardPage({ onOpenTab }: DashboardPageProps) {
                     <p className="tiny-meta">{truncateText(item.last?.bullet || item.queryText, 130)}</p>
                     {item.last?.why ? (
                       <p className="tiny-meta">
-                        Why: {impactLabel(item.last.why.impactClass)} · Score{" "}
-                        {item.last.why.score !== null ? item.last.why.score.toFixed(2) : "--"}
-                        {item.last.why.trust !== null ? ` · Trust: ${item.last.why.trust.toFixed(2)}` : ""}
+                        Why: {impactLabel(item.last.why.impactClass)} · {confidenceLabel(item.last.why.score)} ·{" "}
+                        {trustLabel(item.last.why.trust)}
                       </p>
                     ) : null}
                   </div>

@@ -33,6 +33,9 @@ function conciseLine(item: InboxItem): string {
 
 export default function InboxPage() {
   const [items, setItems] = useState<InboxItem[]>([]);
+  const [categoryFilter, setCategoryFilter] = useState<"all" | "macro" | "commodities" | "equities" | "crypto">("all");
+  const [toneFilter, setToneFilter] = useState<"all" | "pos" | "neg" | "flat">("all");
+  const [unreadOnly, setUnreadOnly] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -122,8 +125,70 @@ export default function InboxPage() {
       {message ? <p className="success">{message}</p> : null}
       {error ? <p className="error">{error}</p> : null}
 
+      <section className="panel stack">
+        <div className="summary-actions">
+          <button
+            type="button"
+            className={categoryFilter === "all" ? "" : "secondary"}
+            onClick={() => setCategoryFilter("all")}
+          >
+            All
+          </button>
+          <button
+            type="button"
+            className={categoryFilter === "macro" ? "" : "secondary"}
+            onClick={() => setCategoryFilter("macro")}
+          >
+            Economy
+          </button>
+          <button
+            type="button"
+            className={categoryFilter === "commodities" ? "" : "secondary"}
+            onClick={() => setCategoryFilter("commodities")}
+          >
+            Commodities
+          </button>
+          <button
+            type="button"
+            className={categoryFilter === "equities" ? "" : "secondary"}
+            onClick={() => setCategoryFilter("equities")}
+          >
+            Equities
+          </button>
+          <button
+            type="button"
+            className={categoryFilter === "crypto" ? "" : "secondary"}
+            onClick={() => setCategoryFilter("crypto")}
+          >
+            Crypto
+          </button>
+        </div>
+        <div className="summary-actions">
+          <button type="button" className={toneFilter === "all" ? "" : "secondary"} onClick={() => setToneFilter("all")}>
+            Any tone
+          </button>
+          <button type="button" className={toneFilter === "pos" ? "" : "secondary"} onClick={() => setToneFilter("pos")}>
+            Positive
+          </button>
+          <button type="button" className={toneFilter === "neg" ? "" : "secondary"} onClick={() => setToneFilter("neg")}>
+            Negative
+          </button>
+          <button type="button" className={toneFilter === "flat" ? "" : "secondary"} onClick={() => setToneFilter("flat")}>
+            Neutral
+          </button>
+          <label className="checkbox-row">
+            <input type="checkbox" checked={unreadOnly} onChange={(event) => setUnreadOnly(event.target.checked)} />
+            <span>Unread only</span>
+          </label>
+        </div>
+      </section>
+
       <div className="card-grid compact-feed">
-        {items.map((item) => (
+        {items
+          .filter((item) => (categoryFilter === "all" ? true : item.category === categoryFilter))
+          .filter((item) => (toneFilter === "all" ? true : classifyTone(`${item.headline} ${item.bullets[0] ?? ""}`) === toneFilter))
+          .filter((item) => (unreadOnly ? !item.read : true))
+          .map((item) => (
           <article
             className={`summary-card summary-card-compact tone-${classifyTone(`${item.headline} ${item.bullets[0] ?? ""}`)} ${item.read ? "is-read" : ""}`}
             key={item.id}
