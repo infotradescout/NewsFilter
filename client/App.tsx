@@ -6,6 +6,7 @@ import AdminPage from "./pages/AdminPage";
 import DashboardPage from "./pages/DashboardPage";
 import FeedsPage from "./pages/FeedsPage";
 import InboxPage from "./pages/InboxPage";
+import LisaFeedPage from "./pages/LisaFeedPage";
 import LoginPage from "./pages/LoginPage";
 import TopicsPage from "./pages/TopicsPage";
 import WatchTopicsPage from "./pages/WatchTopicsPage";
@@ -39,6 +40,7 @@ function Shell({ user, onLogout }: { user: SessionUser; onLogout: () => Promise<
       { to: "/inbox", label: "Feed" },
       { to: "/topics", label: "Themes" },
       { to: "/feeds", label: "Sources" },
+      { to: "/lisa-feed", label: "LISA Feed" },
       { to: "/watch-topics", label: "Always On" },
     ],
     []
@@ -49,6 +51,7 @@ function Shell({ user, onLogout }: { user: SessionUser; onLogout: () => Promise<
     "/inbox": "Live Feed",
     "/topics": "Themes",
     "/feeds": "Sources",
+    "/lisa-feed": "LISA Feed",
     "/watch-topics": "Always On",
     "/admin": "Team Access",
   };
@@ -115,6 +118,7 @@ function Shell({ user, onLogout }: { user: SessionUser; onLogout: () => Promise<
           <Route path="/inbox" element={<InboxPage />} />
           <Route path="/topics" element={<TopicsPage isAdmin={user.role === "admin"} />} />
           <Route path="/feeds" element={<FeedsPage />} />
+          <Route path="/lisa-feed" element={<LisaFeedPage />} />
           <Route path="/watch-topics" element={<WatchTopicsPage isAdmin={user.role === "admin"} />} />
           {user.role === "admin" ? <Route path="/admin" element={<AdminPage />} /> : null}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

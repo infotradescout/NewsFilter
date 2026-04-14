@@ -538,6 +538,19 @@ select {
   vertical-align: top;
 }
 
+.lisa-payload {
+  width: 100%;
+  min-height: 170px;
+  border: 1px solid var(--line-1);
+  border-radius: 12px;
+  padding: 0.6rem 0.7rem;
+  background: #fff;
+  font-family: "IBM Plex Mono", "Fira Code", Consolas, monospace;
+  font-size: 0.77rem;
+  line-height: 1.35;
+  resize: vertical;
+}
+
 .checkbox-row {
   display: flex;
   align-items: center;

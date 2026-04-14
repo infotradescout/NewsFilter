@@ -16,6 +16,7 @@ import { registerPortfolioRoutes } from "./routes/portfolio";
 import { registerAlertRoutes } from "./routes/alerts";
 import { registerCalendarRoutes } from "./routes/calendar";
 import { registerPreferencesRoutes } from "./routes/preferences";
+import { registerLisaFeedRoutes } from "./routes/lisaFeed";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -55,6 +56,7 @@ export function createApp() {
   registerAlertRoutes(app);
   registerCalendarRoutes(app);
   registerPreferencesRoutes(app);
+  registerLisaFeedRoutes(app);
 
   if (env.NODE_ENV === "production") {
     const clientDist = path.resolve(process.cwd(), "dist/client");
