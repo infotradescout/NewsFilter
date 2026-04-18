@@ -44,6 +44,31 @@ export function createApp() {
     });
   });
 
+  // Public machine-readable signal endpoint for LISA source polling.
+  app.get("/api/signals", (_req, res) => {
+    res.json({
+      source: "newsfilter",
+      generated_at: new Date().toISOString(),
+      count: 1,
+      signals: [
+        {
+          id: Date.now(),
+          lane: "market",
+          signal_kind: "source_heartbeat",
+          confidence: 0.92,
+          score: 60,
+          impact_level: "low",
+          trend: "neutral",
+          velocity: "steady",
+          action_hint: "newsfilter source healthy",
+          tags: ["newsfilter", "heartbeat"],
+          source_class: "source_api",
+          observed_fact: "NewsFilter API heartbeat is healthy",
+        },
+      ],
+    });
+  });
+
   registerAuthRoutes(app);
   registerAdminRoutes(app);
   registerTopicRoutes(app);
