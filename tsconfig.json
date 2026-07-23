@@ -9,7 +9,8 @@
     "resolveJsonModule": true,
     "jsx": "react-jsx",
     "types": ["vite/client"],
-    "baseUrl": "."
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0"
   },
   "include": ["client", "shared", "vite.config.ts"]
 }
